@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
 import './Auth.css';
 
+import Container from '@mui/material/Container';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import Stack from '@mui/material/Stack';
+
 type LoginForm = {
   mobileNumber: string;
   password: string;
@@ -17,8 +26,8 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target as HTMLInputElement | HTMLTextAreaElement;
     setFormData(prev => ({ ...prev, [name as keyof LoginForm]: value }));
     setError('');
   };
@@ -46,42 +55,50 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="auth-container">
-      <h2>Sri-Care Login</h2>
-      <p>Welcome to Sri Tel Customer Portal</p>
+    <Container maxWidth="sm">
+      <Box sx={{ mt: 8, p: 4, boxShadow: 3, borderRadius: 2 }}>
+        <Typography variant="h4" gutterBottom>
+          Sri-Care Login
+        </Typography>
+        <Typography variant="subtitle1" gutterBottom>
+          Welcome to Sri Tel Customer Portal
+        </Typography>
 
-      {error && <div className="error">{error}</div>}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <form onSubmit={handleSubmit} className="auth-form">
-        <label htmlFor="mobileNumber">Mobile Number</label>
-        <input
-          id="mobileNumber"
-          name="mobileNumber"
-          type="tel"
-          value={formData.mobileNumber}
-          onChange={handleChange}
-          required
-        />
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          <Stack spacing={2}>
+            <TextField
+              label="Mobile Number"
+              name="mobileNumber"
+              type="tel"
+              value={formData.mobileNumber}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
 
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
+            <Button type="submit" variant="contained" disabled={loading} fullWidth>
+              {loading ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />Logging in...</> : 'Login'}
+            </Button>
+          </Stack>
+        </Box>
 
-      <p>
-        Don't have an account? <span onClick={() => navigate('/register')} className="link">Register here</span>
-      </p>
-    </div>
+        <Typography variant="body2" sx={{ mt: 2 }}>
+          Don't have an account? <Box component="span" sx={{ color: 'primary.main', cursor: 'pointer' }} onClick={() => navigate('/register')}>Register here</Box>
+        </Typography>
+      </Box>
+    </Container>
   );
 };
 
