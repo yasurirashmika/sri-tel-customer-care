@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './components/auth/Login';
-import Register from './components/auth/Register';
+import Login from './components/auth/Login.jsx';
+import Register from './components/auth/Register.jsx';
 import BillList from './components/Billing/BillList';
 import BillDetails from './components/Billing/BillDetails';
 
