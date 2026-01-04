@@ -1,6 +1,3 @@
-public class WebSocketEventListener {
-    
-}
 package lk.sritel.chat.config;
 
 import lk.sritel.chat.dto.MessageDto;
@@ -27,17 +24,17 @@ public class WebSocketEventListener {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
         String username = (String) headerAccessor.getSessionAttributes().get("username");
         String roomId = (String) headerAccessor.getSessionAttributes().get("roomId");
-        
+
         if (username != null && roomId != null) {
             log.info("User {} disconnected from room {}", username, roomId);
-            
+
             MessageDto message = MessageDto.builder()
                     .messageType(MessageType.LEAVE.toString())
                     .senderName(username)
                     .content(username + " left the chat")
                     .sentAt(LocalDateTime.now())
                     .build();
-            
+
             messagingTemplate.convertAndSend("/topic/room/" + roomId, message);
         }
     }
