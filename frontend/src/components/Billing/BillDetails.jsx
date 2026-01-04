@@ -79,19 +79,19 @@ function BillDetails() {
                 </Box>
 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary">Bill Number</Typography>
                     <Typography variant="h6">{bill.billNumber}</Typography>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary">Billing Period</Typography>
                     <Typography variant="h6">{bill.billingPeriod}</Typography>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary">Bill Date</Typography>
                     <Typography variant="h6">{new Date(bill.billDate).toLocaleDateString()}</Typography>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary">Due Date</Typography>
                     <Typography variant="h6">{new Date(bill.dueDate).toLocaleDateString()}</Typography>
                   </Grid>
