@@ -26,7 +26,7 @@ function App() {
         <Route path="/bills" element={<BillList />} />
         <Route path="/bills/:billId" element={<BillDetails />} />
         <Route path="/services" element={<ServiceManagement />} />
-        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment/:billId" element={<Payment />} />
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
       

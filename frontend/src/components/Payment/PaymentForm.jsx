@@ -57,7 +57,7 @@ function PaymentForm() {
 
     try {
       const payment = {
-        userId: user.userId,
+        userId: user.id,
         billId: bill.id,
         amount: bill.totalAmount - bill.paidAmount,
         ...paymentData,
