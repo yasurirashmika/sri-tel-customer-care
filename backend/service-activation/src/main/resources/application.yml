@@ -5,7 +5,7 @@ spring:
   application:
     name: service-activation
   datasource:
-    url: jdbc:postgresql://localhost:5435/servicedb
+    url: jdbc:postgresql://localhost:5432/service_db
     username: postgres
     password: Yasuri@123
   jpa:
