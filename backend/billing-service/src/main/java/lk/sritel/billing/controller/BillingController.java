@@ -11,7 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/bills")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+// @CrossOrigin(origins = "http://localhost:3000")
 public class BillingController {
     
     private final BillingService billingService;
