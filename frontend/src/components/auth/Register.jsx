@@ -27,23 +27,63 @@ const Register = () => {
     address: '',
   });
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  const validateField = (name, value) => {
+    let msg = '';
+    if (name === 'mobileNumber') {
+      const re = /^07[0-9]{8}$/;
+      if (!value) msg = 'Mobile number is required';
+      else if (!re.test(value)) msg = 'Mobile number must be in format 07XXXXXXXX';
+    } else if (name === 'password') {
+      if (!value) msg = 'Password is required';
+      else if (value.length < 6) msg = 'Password must be at least 6 characters';
+    } else if (name === 'confirmPassword') {
+      if (!value) msg = 'Confirm password is required';
+      else if (value !== formData.password) msg = 'Passwords do not match';
+    } else if (name === 'fullName') {
+      if (!value) msg = 'Full name is required';
+    } else if (name === 'email') {
+      if (!value) msg = 'Email is required';
+      else {
+        const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRe.test(value)) msg = 'Invalid email format';
+      }
+    }
+    setErrors(prev => ({ ...prev, [name]: msg }));
+    return msg === '';
+  };
+
+  const validateForm = () => {
+    const fieldNames = ['mobileNumber','password','confirmPassword','fullName','email'];
+    let valid = true;
+    fieldNames.forEach(fn => {
+      const value = formData[fn] || '';
+      const ok = validateField(fn, value);
+      if (!ok) valid = false;
+    });
+    return valid;
+  };
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
     setError('');
+    setErrors(prev => ({ ...prev, [name]: '' }));
+    validateField(name, value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setErrors({});
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    if (!validateForm()) {
       setLoading(false);
       return;
     }
@@ -60,7 +100,13 @@ const Register = () => {
         setError(data.message || 'Registration failed');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      const serverErrors = err.response?.data?.errors;
+      if (serverErrors) {
+        setErrors(serverErrors);
+        setError(err.response?.data?.message || 'Validation failed');
+      } else {
+        setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -107,6 +153,8 @@ const Register = () => {
                   autoComplete="name"
                   value={formData.fullName}
                   onChange={handleChange}
+                  error={Boolean(errors.fullName)}
+                  helperText={errors.fullName || ''}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -120,6 +168,8 @@ const Register = () => {
                   autoComplete="tel"
                   value={formData.mobileNumber}
                   onChange={handleChange}
+                  error={Boolean(errors.mobileNumber)}
+                  helperText={errors.mobileNumber || ''}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -133,6 +183,8 @@ const Register = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
+                  error={Boolean(errors.email)}
+                  helperText={errors.email || ''}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -158,6 +210,8 @@ const Register = () => {
                   autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
+                  error={Boolean(errors.password)}
+                  helperText={errors.password || ''}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -170,6 +224,8 @@ const Register = () => {
                   id="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  error={Boolean(errors.confirmPassword)}
+                  helperText={errors.confirmPassword || ''}
                 />
               </Grid>
             </Grid>
@@ -178,7 +234,7 @@ const Register = () => {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
+              disabled={loading || Object.values(errors).some(Boolean) || !formData.mobileNumber || !formData.password || !formData.confirmPassword || !formData.fullName || !formData.email}
             >
               {loading ? <CircularProgress size={24} /> : 'Sign Up'}
             </Button>
