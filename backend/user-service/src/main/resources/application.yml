@@ -1,0 +1,84 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: user-service
+
+  # ---------- CORS (Frontend Access) ----------
+  web:
+    cors:
+      allowed-origins: "http://localhost:3000"
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+
+  # ---------- Kafka ----------
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: userEvent:lk.sritel.user.dto.UserEventDTO
+    consumer:
+      group-id: user-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: userEvent:lk.sritel.user.dto.UserEventDTO
+
+  # ---------- Database ----------
+  datasource:
+    url: jdbc:postgresql://localhost:5400/user_db
+    username: postgres
+    password: kavi
+    driver-class-name: org.postgresql.Driver
+
+  # ---------- JPA ----------
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+# ---------- Eureka ----------
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
+
+# ---------- JWT ----------
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationSriTelSriCareApplication2025
+  expiration: 86400000
+
+# ---------- Kafka Topics ----------
+kafka:
+  topics:
+    user-events: user-events
+    user-registration: user-registration
+    user-login: user-login
+
+# ---------- Actuator (IMPORTANT for Gateway) ----------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# ---------- Logging ----------
+logging:
+  level:
+    lk.sritel.user: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.kafka: INFO
