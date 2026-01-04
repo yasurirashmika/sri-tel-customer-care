@@ -1,0 +1,34 @@
+# Logs
+logs/
+*.log
+*.log.*
+
+# Build directories
+target/
+build/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Maven
+.m2/
+mvnw
+mvnw.cmd
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+
+# OS
+Thumbs.db
