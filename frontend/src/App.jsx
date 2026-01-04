@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useAuth } from './context/AuthContext'; // <--- 1. Import Auth Hook
 import Login from './components/auth/Login.jsx';
 import Register from './components/auth/Register.jsx';
+import Dashboard from './components/dashboard/Dashboard.jsx';
 import BillList from './components/Billing/BillList';
 import BillDetails from './components/Billing/BillDetails';
 import ChatWidget from './components/Chat/ChatWidget.jsx';
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<h1>Sri-Tel Customer Care</h1>} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         
         {/* Protected Routes (Optional: You can wrap these in a ProtectedRoute component later) */}
         <Route path="/bills" element={<BillList />} />
