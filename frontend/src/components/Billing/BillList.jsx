@@ -19,11 +19,16 @@ function BillList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadBills();
-  }, []);
+    if (user) {
+      loadBills();
+    }
+  }, [user]);
 
   const loadBills = async () => {
+    if (!user) return;
+    
     try {
+      setLoading(true); // Ensure loading state is set at start
       const data = await billingService.getUserBills(user.userId);
       setBills(data);
     } catch (error) {
@@ -53,11 +58,12 @@ function BillList() {
       <Header />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={3}>
+          {/* Fixed MUI Grid Syntax */}
+          <Grid size={{ xs: 12, md: 3 }}>
             <Sidebar />
           </Grid>
           
-          <Grid item xs={12} md={9}>
+          <Grid size={{ xs: 12, md: 9 }}>
             <Typography variant="h4" gutterBottom>
               My Bills
             </Typography>
@@ -73,7 +79,8 @@ function BillList() {
                   <Button 
                     variant="contained" 
                     sx={{ mt: 2 }}
-                    onClick={() => billingService.generateBill(user.userId).then(loadBills)}
+                    // Added check here as well
+                    onClick={() => user && billingService.generateBill(user.userId).then(loadBills)}
                   >
                     Generate Sample Bill
                   </Button>
