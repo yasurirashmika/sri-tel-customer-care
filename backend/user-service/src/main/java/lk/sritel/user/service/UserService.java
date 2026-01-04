@@ -42,13 +42,24 @@ public class UserService {
         logger.info("Processing registration for mobile: {}", request.getMobileNumber());
         
         // Check if user already exists
-        if (userRepository.existsByMobileNumber(request.getMobileNumber())) {
-            throw new DuplicateUserException("Mobile number already registered");
-        }
-        
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateUserException("Email already registered");
-        }
+    if (userRepository.existsByMobileNumber(request.getMobileNumber())) {
+    return new AuthResponse(
+        null,
+        null,
+        "Mobile number already registered",
+        false
+    );
+}
+
+if (userRepository.existsByEmail(request.getEmail())) {
+    return new AuthResponse(
+        null,
+        null,
+        "Email already registered",
+        false
+    );
+}
+
 
         // Create new user
         User user = new User();

@@ -31,9 +31,9 @@ spring:
 
   # ---------- Database ----------
   datasource:
-    url: jdbc:postgresql://localhost:5432/user_db
+    url: jdbc:postgresql://localhost:5400/user_db
     username: postgres
-    password: Yasuri@123
+    password: kavi
     driver-class-name: org.postgresql.Driver
 
   # ---------- JPA ----------
