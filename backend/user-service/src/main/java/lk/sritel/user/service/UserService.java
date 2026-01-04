@@ -1,4 +1,4 @@
-package main.java.lk.sritel.user.service;
+package lk.sritel.user.service;
 
 import lk.sritel.user.dto.*;
 import lk.sritel.user.model.User;
