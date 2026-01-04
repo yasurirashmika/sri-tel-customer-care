@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box, Paper, TextField, IconButton, Typography, List, ListItem,
-  ListItemText, Avatar, Fab, Dialog, DialogTitle, DialogContent,
-  DialogActions, Button, CircularProgress
+  Avatar, Fab, Dialog, DialogTitle, DialogContent,
+  DialogActions, CircularProgress
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import SendIcon from '@mui/icons-material/Send';
@@ -128,8 +128,9 @@ function ChatWidget() {
           sx: { height: '600px', display: 'flex', flexDirection: 'column' }
         }}
       >
+        {/* FIXED: Removed nested Typography. DialogTitle is already an h2. */}
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Customer Support Chat</Typography>
+          Customer Support Chat
           <IconButton onClick={() => setOpen(false)} size="small">
             <CloseIcon />
           </IconButton>
