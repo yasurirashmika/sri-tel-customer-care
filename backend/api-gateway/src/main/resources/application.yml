@@ -1,5 +1,5 @@
 # =============================================================================
-# API GATEWAY CONFIGURATION
+# API GATEWAY CONFIGURATION - CORRECTED
 # Sri Tel Customer Care System
 # =============================================================================
 
@@ -10,62 +10,61 @@ spring:
   application:
     name: api-gateway
   
-  # Cloud Gateway Configuration
   cloud:
     gateway:
-      # Enable service discovery
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
       
-      # Route Definitions
       routes:
-        # User Service Routes
+        # ==================== USER SERVICE ====================
         - id: user-service
-          uri: lb://USER-SERVICE
+          uri: lb://user-service
           predicates:
             - Path=/api/users/**, /api/auth/**
-          filters:
-            - RewritePath=/api/(?<segment>.*), /${segment}
+          # ✅ NO RewritePath filter - keep /api/ prefix
         
-        # Billing Service Routes
+        # ==================== BILLING SERVICE ====================
         - id: billing-service
-          uri: lb://BILLING-SERVICE
+          uri: lb://billing-service
           predicates:
-            - Path=/api/billing/**, /api/bills/**
-          filters:
-            - RewritePath=/api/(?<segment>.*), /${segment}
+            - Path=/api/bills/**
+          # ✅ NO RewritePath filter
         
-        # Payment Service Routes
+        # ==================== PAYMENT SERVICE ====================
         - id: payment-service
-          uri: lb://PAYMENT-SERVICE
+          uri: lb://payment-service
           predicates:
             - Path=/api/payments/**
-          filters:
-            - RewritePath=/api/(?<segment>.*), /${segment}
+          # ✅ NO RewritePath filter
         
-        # Service Activation Routes
+        # ==================== SERVICE ACTIVATION ====================
         - id: service-activation
-          uri: lb://SERVICE-ACTIVATION
+          uri: lb://service-activation
           predicates:
             - Path=/api/services/**
-          filters:
-            - RewritePath=/api/(?<segment>.*), /${segment}
+          # ✅ NO RewritePath filter
         
-        # Notification Service Routes
+        # ==================== NOTIFICATION SERVICE ====================
         - id: notification-service
-          uri: lb://NOTIFICATION-SERVICE
+          uri: lb://notification-service
           predicates:
             - Path=/api/notifications/**
-          filters:
-            - RewritePath=/api/(?<segment>.*), /${segment}
+          # ✅ NO RewritePath filter
+        
+        # ==================== CHAT SERVICE ====================
+        - id: chat-service
+          uri: lb://chat-service
+          predicates:
+            - Path=/api/chat/**
+          # ✅ NO RewritePath filter
       
-      # Global CORS Configuration
+      # ==================== CORS ====================
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "*"
+            allowed-origins: "http://localhost:3000"  # ✅ Specific origin
             allowed-methods:
               - GET
               - POST
@@ -73,10 +72,10 @@ spring:
               - DELETE
               - OPTIONS
             allowed-headers: "*"
-            allow-credentials: false
+            allow-credentials: true  # ✅ Required for JWT
             max-age: 3600
 
-# Eureka Client Configuration
+# ==================== EUREKA ====================
 eureka:
   client:
     service-url:
@@ -85,14 +84,8 @@ eureka:
     fetch-registry: true
   instance:
     prefer-ip-address: true
-    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
 
-# JWT Configuration
-jwt:
-  secret: SriTelSecretKeyForJWTTokenGenerationAndValidation2024
-  expiration: 86400000  # 24 hours in milliseconds
-
-# Actuator Configuration
+# ==================== MANAGEMENT ====================
 management:
   endpoints:
     web:
@@ -101,21 +94,10 @@ management:
   endpoint:
     health:
       show-details: always
-    gateway:
-      enabled: true
 
-# Logging Configuration
+# ==================== LOGGING ====================
 logging:
   level:
     root: INFO
     org.springframework.cloud.gateway: DEBUG
     lk.sritel: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-
-# Application Info
-info:
-  app:
-    name: Sri Tel API Gateway
-    description: Central entry point for all microservices
-    version: 1.0.0

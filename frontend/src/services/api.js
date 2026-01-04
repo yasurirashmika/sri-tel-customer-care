@@ -38,28 +38,37 @@ api.interceptors.response.use(
   }
 );
 
+// ==================== AUTH SERVICE ====================
 export const authService = {
   register: async (data) => {
-    // eslint-disable-next-line no-useless-catch
-    try {
-      const response = await api.post('/api/auth/register', data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post('/api/auth/register', data);
+    return response.data;
   },
   
   login: async (data) => {
-    // eslint-disable-next-line no-useless-catch
-    try {
-      const response = await api.post('/api/auth/login', data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post('/api/auth/login', data);
+    return response.data;
+  },
+
+  forgotPassword: async (email) => {
+    const response = await api.post('/api/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  resetPassword: async (token, newPassword) => {
+    const response = await api.post('/api/auth/reset-password', { token, newPassword });
+    return response.data;
+  },
+
+  verifyToken: async (token) => {
+    const response = await api.post('/api/auth/verify-token', {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
   },
 };
 
+// ==================== USER SERVICE ====================
 export const userService = {
   getUserById: async (id) => {
     const response = await api.get(`/api/users/${id}`);
@@ -71,25 +80,136 @@ export const userService = {
     return response.data;
   },
   
-  getAllUsers: async () => {
-    const response = await api.get('/api/users');
-    return response.data;
-  },
-  
   updateUser: async (id, data) => {
     const response = await api.put(`/api/users/${id}`, data);
     return response.data;
   },
 };
 
-// Resilient notification service: returns { available: boolean, data: [...] }
+// ==================== BILLING SERVICE ====================
+export const billingService = {
+  getUserBills: async (userId) => {
+    const response = await api.get(`/api/bills/user/${userId}`);
+    return response.data;
+  },
+
+  getBillById: async (billId) => {
+    const response = await api.get(`/api/bills/${billId}`);
+    return response.data;
+  },
+
+  getBillByNumber: async (billNumber) => {
+    const response = await api.get(`/api/bills/number/${billNumber}`);
+    return response.data;
+  },
+
+  getUnpaidBills: async (userId) => {
+    const response = await api.get(`/api/bills/user/${userId}/unpaid`);
+    return response.data;
+  },
+
+  generateBill: async (userId) => {
+    const response = await api.post(`/api/bills/generate/${userId}`);
+    return response.data;
+  },
+
+  getBillsByMobile: async (mobileNumber) => {
+    const response = await api.get(`/api/bills/mobile/${mobileNumber}`);
+    return response.data;
+  },
+};
+
+// ==================== PAYMENT SERVICE ====================
+export const paymentService = {
+  processPayment: async (paymentData) => {
+    const response = await api.post('/api/payments/process', paymentData);
+    return response.data;
+  },
+
+  getUserPayments: async (userId) => {
+    const response = await api.get(`/api/payments/user/${userId}`);
+    return response.data;
+  },
+
+  getPaymentById: async (paymentId) => {
+    const response = await api.get(`/api/payments/${paymentId}`);
+    return response.data;
+  },
+
+  getPaymentByTransaction: async (transactionId) => {
+    const response = await api.get(`/api/payments/transaction/${transactionId}`);
+    return response.data;
+  },
+
+  getPaymentsByBill: async (billId) => {
+    const response = await api.get(`/api/payments/bill/${billId}`);
+    return response.data;
+  },
+};
+
+// ==================== SERVICE ACTIVATION ====================
+export const serviceActivationService = {
+  activateService: async (serviceData) => {
+    const response = await api.post('/api/services/activate', serviceData);
+    return response.data;
+  },
+
+  deactivateService: async (serviceId) => {
+    const response = await api.post(`/api/services/deactivate/${serviceId}`);
+    return response.data;
+  },
+
+  getUserServices: async (userId) => {
+    const response = await api.get(`/api/services/user/${userId}`);
+    return response.data;
+  },
+
+  getActiveServices: async (userId) => {
+    const response = await api.get(`/api/services/user/${userId}/active`);
+    return response.data;
+  },
+
+  getServiceById: async (serviceId) => {
+    const response = await api.get(`/api/services/${serviceId}`);
+    return response.data;
+  },
+};
+
+// ==================== CHAT SERVICE ====================
+export const chatService = {
+  createChatRoom: async (userId) => {
+    const response = await api.post(`/api/chat/room/create?userId=${userId}`);
+    return response.data;
+  },
+
+  getChatRoom: async (roomId) => {
+    const response = await api.get(`/api/chat/room/${roomId}`);
+    return response.data;
+  },
+
+  getChatHistory: async (roomId) => {
+    const response = await api.get(`/api/chat/room/${roomId}/messages`);
+    return response.data;
+  },
+
+  closeChatRoom: async (roomId) => {
+    const response = await api.post(`/api/chat/room/${roomId}/close`);
+    return response.data;
+  },
+
+  getUserChatRooms: async (userId) => {
+    const response = await api.get(`/api/chat/user/${userId}/rooms`);
+    return response.data;
+  },
+};
+
+// ==================== NOTIFICATION SERVICE (Optional) ====================
 export const notificationService = {
   getUserNotifications: async (userId) => {
     try {
       const response = await api.get(`/api/notifications/users/${userId}`);
       return { available: true, data: response.data };
     } catch (error) {
-      // Notification service may not be deployed yet; return unavailable indicator and empty data
       console.warn('Notification service unavailable:', error?.response?.status || error.message);
       return { available: false, data: [] };
     }

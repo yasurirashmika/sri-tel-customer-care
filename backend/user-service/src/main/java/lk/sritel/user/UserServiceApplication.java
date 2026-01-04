@@ -9,7 +9,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 public class UserServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(UserServiceApplication.class, args);
-        System.out.println("✅ User Service started successfully on http://localhost:8085");
+        System.out.println("✅ User Service started successfully on http://localhost:8081");
         System.out.println("✅ Kafka Producer configured on localhost:9092");
     }
 }

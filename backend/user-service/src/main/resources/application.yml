@@ -1,17 +1,9 @@
 server:
-  port: 8085
+  port: 8081
 
 spring:
   application:
     name: user-service
-
-  # ---------- CORS (Frontend Access) ----------
-  web:
-    cors:
-      allowed-origins: "http://localhost:3000"
-      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
-      allowed-headers: "*"
-      allow-credentials: true
 
   # ---------- Kafka ----------
   kafka:
@@ -31,9 +23,9 @@ spring:
 
   # ---------- Database ----------
   datasource:
-    url: jdbc:postgresql://localhost:5400/user_db
+    url: jdbc:postgresql://localhost:5432/user_db
     username: postgres
-    password: kavi
+    password: Yasuri@123
     driver-class-name: org.postgresql.Driver
 
   # ---------- JPA ----------
