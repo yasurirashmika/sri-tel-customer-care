@@ -2,43 +2,72 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Container, Grid, Typography, Card, CardContent, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Select, MenuItem, FormControl, InputLabel, CircularProgress,
-  Table, TableBody, TableCell, TableContainer, TableHead,
-  TableRow, Paper, Chip, Alert
+  CircularProgress, Chip, Alert, CardActions
 } from '@mui/material';
+import { 
+  Public as RoamingIcon, 
+  Wifi as DataIcon, 
+  MusicNote as RingtoneIcon, 
+  Phone as VoiceIcon, 
+  Message as SmsIcon,
+  Settings as DefaultIcon
+} from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import Header from '../Layout/Header';
 import Sidebar from '../Layout/Sidebar';
 import serviceService from '../../services/serviceService';
-import AddIcon from '@mui/icons-material/Add';
+
+// 1. Define available services with metadata
+const AVAILABLE_SERVICES = [
+  { type: 'INTERNATIONAL_ROAMING', label: 'International Roaming', description: 'Stay connected globally.', icon: <RoamingIcon fontSize="large" /> },
+  { type: 'DATA_PACKAGE', label: 'Data Package', description: 'High speed internet add-ons.', icon: <DataIcon fontSize="large" /> },
+  { type: 'RING_TONE', label: 'Ring Tone', description: 'Custom tunes for callers.', icon: <RingtoneIcon fontSize="large" /> },
+  { type: 'VOICE_PACKAGE', label: 'Voice Package', description: 'Extra talk time bundles.', icon: <VoiceIcon fontSize="large" /> },
+  { type: 'SMS_PACKAGE', label: 'SMS Package', description: 'Bulk messaging bundles.', icon: <SmsIcon fontSize="large" /> },
+  { type: 'CALLER_TUNE', label: 'Caller Tune', description: 'Set songs as caller tunes.', icon: <RingtoneIcon fontSize="large" /> },
+];
 
 function ServiceManagement() {
   const { user } = useAuth();
-  const [services, setServices] = useState([]);
+  const [userServices, setUserServices] = useState([]); // Services the user actually HAS
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  const [newService, setNewService] = useState({
-    serviceType: 'INTERNATIONAL_ROAMING',
+  // State for the service being activated
+  const [selectedService, setSelectedService] = useState({
+    serviceType: '',
     serviceName: '',
     serviceCode: '',
   });
 
   useEffect(() => {
-    loadServices();
-  }, []);
+    if (user) {
+      loadServices();
+    }
+  }, [user]);
 
   const loadServices = async () => {
     try {
       const data = await serviceService.getUserServices(user.userId);
-      setServices(data);
+      setUserServices(data);
     } catch (error) {
       console.error('Error loading services:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOpenActivate = (serviceType) => {
+    // Pre-fill the type, user just enters name/code
+    setSelectedService({
+      serviceType: serviceType,
+      serviceName: '',
+      serviceCode: ''
+    });
+    setOpenDialog(true);
   };
 
   const handleActivate = async () => {
@@ -48,35 +77,32 @@ function ServiceManagement() {
       await serviceService.activateService({
         userId: user.userId,
         mobileNumber: user.mobileNumber,
-        ...newService,
+        ...selectedService,
       });
       setSuccess('Service activated successfully!');
       setOpenDialog(false);
       loadServices();
-      setNewService({ serviceType: 'INTERNATIONAL_ROAMING', serviceName: '', serviceCode: '' });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to activate service');
     }
   };
 
   const handleDeactivate = async (serviceId) => {
+    if(!window.confirm("Are you sure you want to deactivate this service?")) return;
+
+    setError('');
+    setSuccess('');
+    setActionLoading(serviceId);
     try {
       await serviceService.deactivateService(serviceId);
       setSuccess('Service deactivated successfully!');
-      loadServices();
+      await loadServices();
     } catch (err) {
-      setError('Failed to deactivate service');
+      setError(err.response?.data?.message || 'Failed to deactivate service');
+    } finally {
+      setActionLoading(null);
     }
   };
-
-  const serviceTypes = [
-    { value: 'INTERNATIONAL_ROAMING', label: 'International Roaming' },
-    { value: 'DATA_PACKAGE', label: 'Data Package' },
-    { value: 'RING_TONE', label: 'Ring Tone' },
-    { value: 'CALLER_TUNE', label: 'Caller Tune' },
-    { value: 'SMS_PACKAGE', label: 'SMS Package' },
-    { value: 'VOICE_PACKAGE', label: 'Voice Package' },
-  ];
 
   return (
     <Box>
@@ -88,16 +114,9 @@ function ServiceManagement() {
           </Grid>
           
           <Grid item xs={12} md={9}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h4">My Services</Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setOpenDialog(true)}
-              >
-                Activate Service
-              </Button>
-            </Box>
+            <Typography variant="h4" gutterBottom>
+              Service Management
+            </Typography>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -106,105 +125,113 @@ function ServiceManagement() {
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                 <CircularProgress />
               </Box>
-            ) : services.length === 0 ? (
-              <Card>
-                <CardContent>
-                  <Typography>No services activated yet.</Typography>
-                </CardContent>
-              </Card>
             ) : (
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Service Name</TableCell>
-                      <TableCell>Service Type</TableCell>
-                      <TableCell>Service Code</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Activated On</TableCell>
-                      <TableCell align="center">Action</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {services.map((service) => (
-                      <TableRow key={service.id}>
-                        <TableCell>{service.serviceName}</TableCell>
-                        <TableCell>{service.serviceType}</TableCell>
-                        <TableCell>{service.serviceCode}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={service.status} 
-                            color={service.status === 'ACTIVE' ? 'success' : 'default'} 
-                            size="small" 
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {service.activatedAt ? new Date(service.activatedAt).toLocaleDateString() : '-'}
-                        </TableCell>
-                        <TableCell align="center">
-                          {service.status === 'ACTIVE' && (
-                            <Button
-                              size="small"
-                              variant="outlined"
+              <Grid container spacing={3}>
+                {AVAILABLE_SERVICES.map((serviceTemplate) => {
+                  // Check if user already has this service active
+                  const activeInstance = userServices.find(
+                    us => us.serviceType === serviceTemplate.type && us.status === 'ACTIVE'
+                  );
+
+                  return (
+                    <Grid item xs={12} sm={6} md={4} key={serviceTemplate.type}>
+                      <Card 
+                        sx={{ 
+                          height: '100%', 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          border: activeInstance ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                          backgroundColor: activeInstance ? '#f9fff9' : '#fff'
+                        }}
+                      >
+                        <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
+                          <Box sx={{ color: activeInstance ? 'primary.main' : 'text.secondary', mb: 2 }}>
+                            {serviceTemplate.icon}
+                          </Box>
+                          <Typography variant="h6" component="div">
+                            {serviceTemplate.label}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {serviceTemplate.description}
+                          </Typography>
+
+                          {activeInstance ? (
+                            <Box>
+                              <Chip label="Active" color="success" size="small" sx={{ mb: 1 }} />
+                              <Typography variant="caption" display="block">
+                                {activeInstance.serviceName}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Chip label="Not Active" variant="outlined" size="small" />
+                          )}
+                        </CardContent>
+                        
+                        <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+                          {activeInstance ? (
+                            <Button 
+                              variant="outlined" 
                               color="error"
-                              onClick={() => handleDeactivate(service.id)}
+                              size="small"
+                              disabled={actionLoading === activeInstance.id}
+                              onClick={() => handleDeactivate(activeInstance.id)}
                             >
-                              Deactivate
+                              {actionLoading === activeInstance.id ? 'Processing...' : 'Deactivate'}
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="contained" 
+                              color="primary"
+                              size="small"
+                              onClick={() => handleOpenActivate(serviceTemplate.type)}
+                            >
+                              Activate Now
                             </Button>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                        </CardActions>
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
             )}
 
-            {/* Activate Service Dialog */}
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-              <DialogTitle>Activate New Service</DialogTitle>
+            {/* Dialog for details when Activating */}
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="xs" fullWidth>
+              <DialogTitle>Activate {AVAILABLE_SERVICES.find(s => s.type === selectedService.serviceType)?.label}</DialogTitle>
               <DialogContent>
-                <FormControl fullWidth sx={{ mt: 2 }}>
-                  <InputLabel>Service Type</InputLabel>
-                  <Select
-                    value={newService.serviceType}
-                    label="Service Type"
-                    onChange={(e) => setNewService({ ...newService, serviceType: e.target.value })}
-                  >
-                    {serviceTypes.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
-                        {type.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
+                  Please provide details to activate this service.
+                </Typography>
                 
                 <TextField
                   fullWidth
-                  label="Service Name"
-                  value={newService.serviceName}
-                  onChange={(e) => setNewService({ ...newService, serviceName: e.target.value })}
-                  margin="normal"
+                  label="Package Name / Alias"
+                  value={selectedService.serviceName}
+                  onChange={(e) => setSelectedService({ ...selectedService, serviceName: e.target.value })}
+                  margin="dense"
                   required
+                  placeholder="e.g. My Roaming"
                 />
                 
                 <TextField
                   fullWidth
-                  label="Service Code"
-                  value={newService.serviceCode}
-                  onChange={(e) => setNewService({ ...newService, serviceCode: e.target.value })}
-                  margin="normal"
+                  label="Activation Code"
+                  value={selectedService.serviceCode}
+                  onChange={(e) => setSelectedService({ ...selectedService, serviceCode: e.target.value })}
+                  margin="dense"
                   required
-                  helperText="e.g., *123# or specific service code"
+                  helperText="e.g., *123# or Promo Code"
                 />
               </DialogContent>
               <DialogActions>
                 <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-                <Button onClick={handleActivate} variant="contained">
-                  Activate
+                <Button onClick={handleActivate} variant="contained" disabled={!selectedService.serviceName || !selectedService.serviceCode}>
+                  Confirm Activation
                 </Button>
               </DialogActions>
             </Dialog>
+
           </Grid>
         </Grid>
       </Container>

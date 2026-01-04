@@ -13,13 +13,13 @@ const serviceService = {
     return response.data;
   },
 
-  // Deactivate a service
+  // Deactivate a service (matches backend: POST /deactivate/{serviceId})
   deactivateService: async (serviceId) => {
-    const response = await api.delete(`/services/${serviceId}`);
+    const response = await api.post(`/services/deactivate/${serviceId}`);
     return response.data;
   },
 
-  // Get service details
+  // Get service details by id
   getServiceById: async (serviceId) => {
     const response = await api.get(`/services/${serviceId}`);
     return response.data;
