@@ -42,7 +42,7 @@ export const authService = {
   register: async (data) => {
     // eslint-disable-next-line no-useless-catch
     try {
-      const response = await api.post('/user-service/api/auth/register', data);
+      const response = await api.post('/api/auth/register', data);
       return response.data;
     } catch (error) {
       throw error;
@@ -52,7 +52,7 @@ export const authService = {
   login: async (data) => {
     // eslint-disable-next-line no-useless-catch
     try {
-      const response = await api.post('/user-service/api/auth/login', data);
+      const response = await api.post('/api/auth/login', data);
       return response.data;
     } catch (error) {
       throw error;
@@ -62,23 +62,37 @@ export const authService = {
 
 export const userService = {
   getUserById: async (id) => {
-    const response = await api.get(`/user-service/api/users/${id}`);
+    const response = await api.get(`/api/users/${id}`);
     return response.data;
   },
   
   getUserByMobile: async (mobileNumber) => {
-    const response = await api.get(`/user-service/api/users/mobile/${mobileNumber}`);
+    const response = await api.get(`/api/users/mobile/${mobileNumber}`);
     return response.data;
   },
   
   getAllUsers: async () => {
-    const response = await api.get('/user-service/api/users');
+    const response = await api.get('/api/users');
     return response.data;
   },
   
   updateUser: async (id, data) => {
-    const response = await api.put(`/user-service/api/users/${id}`, data);
+    const response = await api.put(`/api/users/${id}`, data);
     return response.data;
+  },
+};
+
+// Resilient notification service: returns { available: boolean, data: [...] }
+export const notificationService = {
+  getUserNotifications: async (userId) => {
+    try {
+      const response = await api.get(`/api/notifications/users/${userId}`);
+      return { available: true, data: response.data };
+    } catch (error) {
+      // Notification service may not be deployed yet; return unavailable indicator and empty data
+      console.warn('Notification service unavailable:', error?.response?.status || error.message);
+      return { available: false, data: [] };
+    }
   },
 };
 
