@@ -1,8 +1,3 @@
-# =============================================================================
-# API GATEWAY CONFIGURATION - CORRECTED
-# Sri Tel Customer Care System
-# =============================================================================
-
 server:
   port: 8080
 
@@ -20,59 +15,49 @@ spring:
       routes:
         # ==================== USER SERVICE ====================
         - id: user-service
-          uri: lb://user-service
+          uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**, /api/auth/**
-          # ✅ NO RewritePath filter - keep /api/ prefix
         
         # ==================== BILLING SERVICE ====================
         - id: billing-service
-          uri: lb://billing-service
+          uri: lb://BILLING-SERVICE
           predicates:
-            - Path=/api/bills/**
-          # ✅ NO RewritePath filter
+            # 👇 Catch both /api/bills AND just /bills (Fixes your log error)
+            - Path=/api/bills/**, /bills/**
         
         # ==================== PAYMENT SERVICE ====================
         - id: payment-service
-          uri: lb://payment-service
+          uri: lb://PAYMENT-SERVICE
           predicates:
-            - Path=/api/payments/**
-          # ✅ NO RewritePath filter
+            - Path=/api/payments/**, /payments/**
         
         # ==================== SERVICE ACTIVATION ====================
         - id: service-activation
-          uri: lb://service-activation
+          uri: lb://SERVICE-ACTIVATION
           predicates:
-            - Path=/api/services/**
-          # ✅ NO RewritePath filter
+            - Path=/api/services/**, /services/**
         
         # ==================== NOTIFICATION SERVICE ====================
         - id: notification-service
-          uri: lb://notification-service
+          uri: lb://NOTIFICATION-SERVICE
           predicates:
-            - Path=/api/notifications/**
-          # ✅ NO RewritePath filter
+            - Path=/api/notifications/**, /notifications/**
         
         # ==================== CHAT SERVICE ====================
         - id: chat-service
-          uri: lb://chat-service
+          uri: lb://CHAT-SERVICE
           predicates:
-            - Path=/api/chat/**
-          # ✅ NO RewritePath filter
+            - Path=/api/chat/**, /chat/**
       
-      # ==================== CORS ====================
+      # ==================== GLOBAL CORS ====================
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "http://localhost:3000"  # ✅ Specific origin
-            allowed-methods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
+            allowed-origins: "http://localhost:3000"
+            allowed-methods: "*"
             allowed-headers: "*"
-            allow-credentials: true  # ✅ Required for JWT
+            allow-credentials: true
             max-age: 3600
 
 # ==================== EUREKA ====================
@@ -85,19 +70,10 @@ eureka:
   instance:
     prefer-ip-address: true
 
-# ==================== MANAGEMENT ====================
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,gateway
-  endpoint:
-    health:
-      show-details: always
-
 # ==================== LOGGING ====================
 logging:
   level:
     root: INFO
-    org.springframework.cloud.gateway: DEBUG
-    lk.sritel: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
+    org.springframework.web.reactive.function.client: TRACE
