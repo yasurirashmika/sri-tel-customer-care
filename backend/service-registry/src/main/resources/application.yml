@@ -1,0 +1,172 @@
+# =============================================================================
+# SERVICE REGISTRY (EUREKA SERVER) CONFIGURATION
+# Sri Tel Customer Care System
+# =============================================================================
+
+# Server Configuration
+server:
+  port: 8761
+
+# Application Configuration
+spring:
+  application:
+    name: service-registry
+  
+  # Output Configuration (Optional - for cleaner logs)
+  output:
+    ansi:
+      enabled: always
+
+# =============================================================================
+# EUREKA SERVER CONFIGURATION
+# =============================================================================
+eureka:
+  instance:
+    hostname: localhost
+    # Prefer using IP address for registration (useful in containerized environments)
+    prefer-ip-address: false
+    # Lease renewal interval (how often to send heartbeat to registry)
+    lease-renewal-interval-in-seconds: 30
+    # Lease expiration duration (when to consider service down if no heartbeat)
+    lease-expiration-duration-in-seconds: 90
+  
+  client:
+    # This Eureka server should NOT register itself as a client
+    register-with-eureka: false
+    # This Eureka server should NOT fetch registry from other servers
+    fetch-registry: false
+    # URL where other services will register
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+    # Registry fetch interval for clients (in seconds)
+    registry-fetch-interval-seconds: 30
+  
+  server:
+    # Wait time before server starts accepting traffic (0 for dev, increase for prod)
+    wait-time-in-ms-when-sync-empty: 0
+    
+    # IMPORTANT: Disable self-preservation mode in development
+    # In production, set this to TRUE to prevent mass de-registration during network issues
+    enable-self-preservation: false
+    
+    # How often to check for expired leases (in milliseconds)
+    eviction-interval-timer-in-ms: 4000
+    
+    # Response cache settings for better performance
+    response-cache-update-interval-ms: 5000
+    response-cache-auto-expiration-in-seconds: 180
+    
+    # Renewal threshold percentage (default is 0.85)
+    renewal-percent-threshold: 0.85
+    
+    # How long to wait for peers to sync
+    peer-eureka-nodes-update-interval-ms: 10000
+    
+    # Maximum number of threads to use for replication
+    max-threads-for-peer-replication: 20
+
+# =============================================================================
+# ACTUATOR CONFIGURATION (Health & Monitoring)
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose all actuator endpoints (you can restrict in production)
+        include: health,info,metrics,prometheus,env
+      base-path: /actuator
+  
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  
+  info:
+    env:
+      enabled: true
+  
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# =============================================================================
+# APPLICATION INFO (Visible in /actuator/info)
+# =============================================================================
+info:
+  app:
+    name: Sri Tel Service Registry
+    description: Eureka Server for Service Discovery
+    version: 1.0.0
+    encoding: UTF-8
+    java:
+      version: ${java.version}
+  company:
+    name: Sri Tel Ltd
+    project: Customer Care System (Sri-Care)
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+logging:
+  level:
+    # Root level
+    root: INFO
+    
+    # Eureka specific logging
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+    
+    # Spring Cloud logging
+    org.springframework.cloud: INFO
+    
+    # Your application logging
+    lk.sritel: DEBUG
+  
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  
+  file:
+    name: logs/service-registry.log
+    max-size: 10MB
+    max-history: 30
+
+# =============================================================================
+# DEVELOPMENT vs PRODUCTION PROFILES
+# =============================================================================
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+eureka:
+  server:
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 4000
+
+logging:
+  level:
+    root: DEBUG
+    lk.sritel: DEBUG
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+eureka:
+  server:
+    # ENABLE self-preservation in production
+    enable-self-preservation: true
+    eviction-interval-timer-in-ms: 60000
+    renewal-percent-threshold: 0.85
+
+logging:
+  level:
+    root: WARN
+    lk.sritel: INFO
