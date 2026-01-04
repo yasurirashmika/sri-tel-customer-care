@@ -522,3 +522,79 @@
 2026-01-04 08:07:41 [SpringApplicationShutdownHook] INFO  c.n.e.DefaultEurekaServerContext - Shut down
 2026-01-04 08:07:41 [SpringApplicationShutdownHook] INFO  c.netflix.discovery.DiscoveryClient - Shutting down DiscoveryClient ...
 2026-01-04 08:07:41 [SpringApplicationShutdownHook] INFO  c.netflix.discovery.DiscoveryClient - Completed shut down of DiscoveryClient
+2026-01-04 09:50:32 [main] INFO  l.s.r.ServiceRegistryApplication - Starting ServiceRegistryApplication using Java 21.0.9 with PID 19164 (C:\test\java\Task\sri-tel-customer-care\backend\service-registry\target\classes started by vishu in C:\test\java\Task\sri-tel-customer-care\backend\service-registry)
+2026-01-04 09:50:32 [main] DEBUG l.s.r.ServiceRegistryApplication - Running with Spring Boot v3.5.9, Spring v6.2.15
+2026-01-04 09:50:32 [main] INFO  l.s.r.ServiceRegistryApplication - No active profile set, falling back to 1 default profile: "default"
+2026-01-04 09:50:35 [main] INFO  o.s.cloud.context.scope.GenericScope - BeanFactory id=bb2cd5af-87f0-3eb9-a071-2293863a2e08
+2026-01-04 09:50:35 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8761 (http)
+2026-01-04 09:50:35 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-01-04 09:50:35 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.50]
+2026-01-04 09:50:35 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-01-04 09:50:35 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 3573 ms
+2026-01-04 09:50:38 [main] INFO  c.n.d.p.DiscoveryJerseyProvider - Using JSON encoding codec LegacyJacksonJson
+2026-01-04 09:50:38 [main] INFO  c.n.d.p.DiscoveryJerseyProvider - Using JSON decoding codec LegacyJacksonJson
+2026-01-04 09:50:38 [main] INFO  c.n.d.p.DiscoveryJerseyProvider - Using XML encoding codec XStreamXml
+2026-01-04 09:50:38 [main] INFO  c.n.d.p.DiscoveryJerseyProvider - Using XML decoding codec XStreamXml
+2026-01-04 09:50:40 [main] INFO  o.s.cloud.commons.util.InetUtils - Cannot determine local hostname
+2026-01-04 09:50:42 [main] INFO  o.s.cloud.commons.util.InetUtils - Cannot determine local hostname
+2026-01-04 09:50:42 [main] WARN  o.s.c.l.c.LoadBalancerCacheAutoConfiguration$LoadBalancerCaffeineWarnLogger - Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-01-04 09:50:42 [main] INFO  o.s.c.n.eureka.InstanceInfoFactory - Setting initial instance status as: STARTING
+2026-01-04 09:50:42 [main] INFO  c.netflix.discovery.DiscoveryClient - Initializing Eureka in region us-east-1
+2026-01-04 09:50:42 [main] INFO  c.netflix.discovery.DiscoveryClient - Client configured to neither register nor query for data.
+2026-01-04 09:50:42 [main] INFO  c.netflix.discovery.DiscoveryClient - Discovery Client initialized at timestamp 1767500442772 with initial instances count: 0
+2026-01-04 09:50:43 [main] INFO  c.n.e.DefaultEurekaServerContext - Initializing ...
+2026-01-04 09:50:43 [main] WARN  c.n.eureka.cluster.PeerEurekaNodes - The replica size seems to be empty. Check the route 53 DNS Registry
+2026-01-04 09:50:43 [main] INFO  c.n.e.r.AbstractInstanceRegistry - Finished initializing remote region registries. All known remote regions: []
+2026-01-04 09:50:43 [main] INFO  c.n.e.DefaultEurekaServerContext - Initialized
+2026-01-04 09:50:43 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 4 endpoints beneath base path '/actuator'
+2026-01-04 09:50:43 [main] INFO  o.s.c.n.e.s.EurekaServiceRegistry - Registering application SERVICE-REGISTRY with eureka with status UP
+2026-01-04 09:50:43 [Thread-10] INFO  o.s.c.n.e.s.EurekaServerBootstrap - isAws returned false
+2026-01-04 09:50:43 [Thread-10] INFO  o.s.c.n.e.s.EurekaServerBootstrap - Initialized server context
+2026-01-04 09:50:43 [Thread-10] INFO  c.n.e.r.PeerAwareInstanceRegistryImpl - Got 1 instances from neighboring DS node
+2026-01-04 09:50:43 [Thread-10] INFO  c.n.e.r.PeerAwareInstanceRegistryImpl - Renew threshold is: 1
+2026-01-04 09:50:43 [Thread-10] INFO  c.n.e.r.PeerAwareInstanceRegistryImpl - Changing status to UP
+2026-01-04 09:50:43 [Thread-10] INFO  o.s.c.n.e.s.EurekaServerInitializerConfiguration - Started Eureka Server
+2026-01-04 09:50:43 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8761 (http) with context path '/'
+2026-01-04 09:50:43 [main] INFO  o.s.c.n.e.s.EurekaAutoServiceRegistration - Updating port to 8761
+2026-01-04 09:50:44 [main] INFO  o.s.cloud.commons.util.InetUtils - Cannot determine local hostname
+2026-01-04 09:50:44 [main] INFO  l.s.r.ServiceRegistryApplication - Started ServiceRegistryApplication in 15.022 seconds (process running for 16.708)
+2026-01-04 09:50:45 [http-nio-8761-exec-2] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-01-04 09:50:45 [http-nio-8761-exec-2] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-01-04 09:50:45 [http-nio-8761-exec-2] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 3 ms
+2026-01-04 09:50:45 [http-nio-8761-exec-1] WARN  c.n.e.r.AbstractInstanceRegistry - DS: Registry: lease doesn't exist, registering resource: API-GATEWAY - api-gateway:cd4e1dd45a114c59a2be9cef064928c2
+2026-01-04 09:50:45 [http-nio-8761-exec-1] WARN  c.n.e.resources.InstanceResource - Not Found (Renew): API-GATEWAY - api-gateway:cd4e1dd45a114c59a2be9cef064928c2
+2026-01-04 09:50:46 [http-nio-8761-exec-3] INFO  c.n.e.r.AbstractInstanceRegistry - Registered instance API-GATEWAY/api-gateway:cd4e1dd45a114c59a2be9cef064928c2 with status UP (replication=false)
+2026-01-04 09:50:46 [http-nio-8761-exec-4] INFO  c.n.e.r.AbstractInstanceRegistry - Registered instance API-GATEWAY/api-gateway:cd4e1dd45a114c59a2be9cef064928c2 with status UP (replication=false)
+2026-01-04 09:50:47 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:50:51 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:50:53 [Eureka-PeerNodesUpdater] WARN  c.n.eureka.cluster.PeerEurekaNodes - The replica size seems to be empty. Check the route 53 DNS Registry
+2026-01-04 09:50:55 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:50:59 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:51:03 [Eureka-PeerNodesUpdater] WARN  c.n.eureka.cluster.PeerEurekaNodes - The replica size seems to be empty. Check the route 53 DNS Registry
+2026-01-04 09:51:03 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:51:07 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:51:11 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 1ms
+2026-01-04 09:51:13 [Eureka-PeerNodesUpdater] WARN  c.n.eureka.cluster.PeerEurekaNodes - The replica size seems to be empty. Check the route 53 DNS Registry
+2026-01-04 09:51:15 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:51:16 [http-nio-8761-exec-8] INFO  c.n.e.r.AbstractInstanceRegistry - Registered instance API-GATEWAY/api-gateway:cd4e1dd45a114c59a2be9cef064928c2 with status UP (replication=false)
+2026-01-04 09:51:19 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:51:23 [Eureka-PeerNodesUpdater] WARN  c.n.eureka.cluster.PeerEurekaNodes - The replica size seems to be empty. Check the route 53 DNS Registry
+2026-01-04 09:51:23 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:51:27 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 1ms
+2026-01-04 09:51:28 [http-nio-8761-exec-7] INFO  c.n.e.r.AbstractInstanceRegistry - Registered instance API-GATEWAY/api-gateway:cd4e1dd45a114c59a2be9cef064928c2 with status DOWN (replication=false)
+2026-01-04 09:51:31 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 1ms
+2026-01-04 09:51:31 [http-nio-8761-exec-10] INFO  c.n.e.r.AbstractInstanceRegistry - Cancelled instance API-GATEWAY/api-gateway:cd4e1dd45a114c59a2be9cef064928c2 (replication=false)
+2026-01-04 09:51:33 [Eureka-PeerNodesUpdater] WARN  c.n.eureka.cluster.PeerEurekaNodes - The replica size seems to be empty. Check the route 53 DNS Registry
+2026-01-04 09:51:35 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 0ms
+2026-01-04 09:51:39 [Eureka-EvictionTimer] INFO  c.n.e.r.AbstractInstanceRegistry - Running the evict task with compensationTime 1ms
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  o.s.c.n.e.s.EurekaServiceRegistry - Unregistering application SERVICE-REGISTRY with eureka with status DOWN
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-01-04 09:51:41 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  o.s.c.n.e.s.EurekaServerBootstrap - Shutting down Eureka Server..
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  c.n.e.DefaultEurekaServerContext - Shutting down ...
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  c.n.e.DefaultEurekaServerContext - Shut down
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  o.s.c.n.e.s.EurekaServerBootstrap - Eureka Service is now shutdown...
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  c.n.e.DefaultEurekaServerContext - Shutting down ...
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  c.n.e.DefaultEurekaServerContext - Shut down
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  c.netflix.discovery.DiscoveryClient - Shutting down DiscoveryClient ...
+2026-01-04 09:51:41 [SpringApplicationShutdownHook] INFO  c.netflix.discovery.DiscoveryClient - Completed shut down of DiscoveryClient
