@@ -6,6 +6,7 @@ import Register from './components/auth/Register.jsx';
 import BillList from './components/Billing/BillList';
 import BillDetails from './components/Billing/BillDetails';
 import ChatWidget from './components/Chat/ChatWidget.jsx';
+import ServiceManagement from './components/Services/ServiceManagement.jsx';
 
 function App() {
   // 2. Get the current user status
@@ -21,6 +22,7 @@ function App() {
         {/* Protected Routes (Optional: You can wrap these in a ProtectedRoute component later) */}
         <Route path="/bills" element={<BillList />} />
         <Route path="/bills/:billId" element={<BillDetails />} />
+        <Route path="/services" element={<ServiceManagement />} />
       </Routes>
       
       {/* 3. Only show ChatWidget if user is logged in */}
