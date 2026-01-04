@@ -18,13 +18,13 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         UserDTO user = userService.getUserById(id);
-        return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(user);
     }
     
     @GetMapping("/mobile/{mobileNumber}")
     public ResponseEntity<UserDTO> getUserByMobile(@PathVariable String mobileNumber) {
         UserDTO user = userService.getUserByMobileNumber(mobileNumber);
-        return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(user);
     }
     
     @GetMapping
@@ -35,6 +35,6 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         UserDTO updated = userService.updateUser(id, userDTO);
-        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(updated);
     }
 }

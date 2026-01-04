@@ -2,112 +2,182 @@ package lk.sritel.user.service;
 
 import lk.sritel.user.dto.*;
 import lk.sritel.user.model.User;
+import lk.sritel.user.exception.DuplicateUserException;
+import lk.sritel.user.exception.InvalidCredentialsException;
+import lk.sritel.user.exception.UserNotFoundException;
 import lk.sritel.user.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lk.sritel.user.util.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class UserService {
-    
-    @Autowired
-    private UserRepository userRepository;
-    
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    
-    @Transactional
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final KafkaProducerService kafkaProducerService;
+
+    public UserService(UserRepository userRepository, 
+                      PasswordEncoder passwordEncoder,
+                      JwtUtil jwtUtil,
+                      KafkaProducerService kafkaProducerService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.kafkaProducerService = kafkaProducerService;
+    }
+
     public AuthResponse register(RegisterRequest request) {
+        logger.info("Processing registration for mobile: {}", request.getMobileNumber());
+        
+        // Check if user already exists
         if (userRepository.existsByMobileNumber(request.getMobileNumber())) {
-            return new AuthResponse(null, null, "Mobile number already registered", false);
+            throw new DuplicateUserException("Mobile number already registered");
         }
         
         if (userRepository.existsByEmail(request.getEmail())) {
-            return new AuthResponse(null, null, "Email already registered", false);
+            throw new DuplicateUserException("Email already registered");
         }
-        
+
+        // Create new user
         User user = new User();
         user.setMobileNumber(request.getMobileNumber());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setAddress(request.getAddress());
-        user.setStatus(User.AccountStatus.ACTIVE);
-        user.setCreatedAt(LocalDateTime.now());
-        
-        user = userRepository.save(user);
-        
-        String token = UUID.randomUUID().toString();
-        UserDTO userDTO = convertToDTO(user);
-        
-        return new AuthResponse(token, userDTO, "Registration successful", true);
+        user.setStatus("ACTIVE");
+
+        User savedUser = userRepository.save(user);
+        logger.info("User registered successfully: {}", savedUser.getMobileNumber());
+
+        // Generate JWT token
+        String token = jwtUtil.generateToken(savedUser.getMobileNumber(), savedUser.getId());
+
+        // Send Kafka event for user registration
+        UserEventDTO event = new UserEventDTO(
+            "REGISTRATION",
+            savedUser.getId(),
+            savedUser.getMobileNumber(),
+            savedUser.getEmail(),
+            savedUser.getFullName(),
+            LocalDateTime.now(),
+            "New user registered successfully"
+        );
+        kafkaProducerService.sendRegistrationEvent(event);
+
+        return new AuthResponse(
+            token,
+            convertToDTO(savedUser),
+            "Registration successful",
+            true
+        );
     }
-    
-    @Transactional
+
     public AuthResponse login(LoginRequest request) {
-        Optional<User> userOpt = userRepository.findByMobileNumber(request.getMobileNumber());
+        logger.info("Processing login for mobile: {}", request.getMobileNumber());
         
-        if (userOpt.isEmpty()) {
-            return new AuthResponse(null, null, "Invalid credentials", false);
-        }
-        
-        User user = userOpt.get();
-        
+        User user = userRepository.findByMobileNumber(request.getMobileNumber())
+            .orElseThrow(() -> new InvalidCredentialsException("Invalid mobile number or password"));
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return new AuthResponse(null, null, "Invalid credentials", false);
+            throw new InvalidCredentialsException("Invalid mobile number or password");
         }
-        
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-        
-        String token = UUID.randomUUID().toString();
-        UserDTO userDTO = convertToDTO(user);
-        
-        return new AuthResponse(token, userDTO, "Login successful", true);
+
+        if (!"ACTIVE".equals(user.getStatus())) {
+            throw new InvalidCredentialsException("Account is not active");
+        }
+
+        logger.info("User logged in successfully: {}", user.getMobileNumber());
+
+        String token = jwtUtil.generateToken(user.getMobileNumber(), user.getId());
+
+        // Send Kafka event for user login
+        UserEventDTO event = new UserEventDTO(
+            "LOGIN",
+            user.getId(),
+            user.getMobileNumber(),
+            user.getEmail(),
+            user.getFullName(),
+            LocalDateTime.now(),
+            "User logged in successfully"
+        );
+        kafkaProducerService.sendLoginEvent(event);
+
+        return new AuthResponse(
+            token,
+            convertToDTO(user),
+            "Login successful",
+            true
+        );
     }
-    
+
     public UserDTO getUserById(Long id) {
-        return userRepository.findById(id)
-                .map(this::convertToDTO)
-                .orElse(null);
-    }
-    
-    public UserDTO getUserByMobileNumber(String mobileNumber) {
-        return userRepository.findByMobileNumber(mobileNumber)
-                .map(this::convertToDTO)
-                .orElse(null);
-    }
-    
-    public List<UserDTO> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-    
-    @Transactional
-    public UserDTO updateUser(Long id, UserDTO userDTO) {
-        Optional<User> userOpt = userRepository.findById(id);
-        
-        if (userOpt.isEmpty()) {
-            return null;
-        }
-        
-        User user = userOpt.get();
-        user.setFullName(userDTO.getFullName());
-        user.setEmail(userDTO.getEmail());
-        user.setAddress(userDTO.getAddress());
-        
-        user = userRepository.save(user);
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
         return convertToDTO(user);
     }
-    
+
+    public UserDTO getUserByMobileNumber(String mobileNumber) {
+        User user = userRepository.findByMobileNumber(mobileNumber)
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
+        return convertToDTO(user);
+    }
+
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+
+    public UserDTO updateUser(Long id, UserDTO userDTO) {
+        logger.info("Processing update for user ID: {}", id);
+        
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        if (userDTO.getFullName() != null) {
+            user.setFullName(userDTO.getFullName());
+        }
+        if (userDTO.getEmail() != null) {
+            user.setEmail(userDTO.getEmail());
+        }
+        if (userDTO.getAddress() != null) {
+            user.setAddress(userDTO.getAddress());
+        }
+        if (userDTO.getStatus() != null) {
+            user.setStatus(userDTO.getStatus());
+        }
+
+        User updatedUser = userRepository.save(user);
+        logger.info("User updated successfully: {}", updatedUser.getMobileNumber());
+
+        // Send Kafka event for user update
+        UserEventDTO event = new UserEventDTO(
+            "UPDATE",
+            updatedUser.getId(),
+            updatedUser.getMobileNumber(),
+            updatedUser.getEmail(),
+            updatedUser.getFullName(),
+            LocalDateTime.now(),
+            "User profile updated"
+        );
+        kafkaProducerService.sendUserEvent(event);
+
+        return convertToDTO(updatedUser);
+    }
+
     private UserDTO convertToDTO(User user) {
         return new UserDTO(
             user.getId(),
@@ -115,7 +185,7 @@ public class UserService {
             user.getFullName(),
             user.getEmail(),
             user.getAddress(),
-            user.getStatus().toString()
+            user.getStatus()
         );
     }
 }

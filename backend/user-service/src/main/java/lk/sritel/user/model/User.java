@@ -12,36 +12,43 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "mobile_number", unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 10)
     private String mobileNumber;
     
     @Column(nullable = false)
     private String password;
     
-    @Column(name = "full_name", nullable = false)
+    @Column(nullable = false)
     private String fullName;
     
     @Column(unique = true, nullable = false)
     private String email;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 500)
     private String address;
     
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private AccountStatus status = AccountStatus.ACTIVE;
+    private String status = "ACTIVE";
     
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
     
-    @Column(name = "last_login")
-    private LocalDateTime lastLogin;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
     
-    public enum AccountStatus {
-        ACTIVE, SUSPENDED, INACTIVE
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }
