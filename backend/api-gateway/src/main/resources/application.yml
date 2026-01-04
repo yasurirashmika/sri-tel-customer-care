@@ -1,0 +1,73 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Member 1 Services
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**,/api/auth/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+        
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+        
+        # Member 2 Services (Ready for integration)
+        - id: billing-service
+          uri: lb://billing-service
+          predicates:
+            - Path=/api/bills/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+        
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+        
+        - id: service-activation
+          uri: lb://service-activation
+          predicates:
+            - Path=/api/services/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+        
+        - id: chat-service
+          uri: lb://chat-service
+          predicates:
+            - Path=/api/chat/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+      
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
