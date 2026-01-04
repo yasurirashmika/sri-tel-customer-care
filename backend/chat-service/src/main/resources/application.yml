@@ -7,12 +7,15 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/chat_db
     username: postgres
-    password: postgres
+    password: Yasuri@123
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 eureka:
   client:
