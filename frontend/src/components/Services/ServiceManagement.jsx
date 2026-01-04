@@ -51,7 +51,7 @@ function ServiceManagement() {
 
   const loadServices = async () => {
     try {
-      const data = await serviceService.getUserServices(user.userId);
+      const data = await serviceService.getUserServices(user.id);
       setUserServices(data);
     } catch (error) {
       console.error('Error loading services:', error);
@@ -75,7 +75,7 @@ function ServiceManagement() {
     setSuccess('');
     try {
       await serviceService.activateService({
-        userId: user.userId,
+        userId: user.id,
         mobileNumber: user.mobileNumber,
         ...selectedService,
       });

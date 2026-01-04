@@ -29,7 +29,7 @@ function BillList() {
     
     try {
       setLoading(true); // Ensure loading state is set at start
-      const data = await billingService.getUserBills(user.userId);
+      const data = await billingService.getUserBills(user.id);
       setBills(data);
     } catch (error) {
       console.error('Error loading bills:', error);
@@ -80,7 +80,7 @@ function BillList() {
                     variant="contained" 
                     sx={{ mt: 2 }}
                     // Added check here as well
-                    onClick={() => user && billingService.generateBill(user.userId).then(loadBills)}
+                    onClick={() => user && billingService.generateBill(user.id).then(loadBills)}
                   >
                     Generate Sample Bill
                   </Button>

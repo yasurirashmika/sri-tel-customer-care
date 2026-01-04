@@ -43,7 +43,7 @@ function ChatWidget() {
     setLoading(true);
     try {
       // Create chat room
-      const room = await chatService.createChatRoom(user.userId);
+      const room = await chatService.createChatRoom(user.id);
       setChatRoom(room);
 
       // Load chat history
@@ -68,7 +68,7 @@ function ChatWidget() {
       setTimeout(() => {
         if (client && client.connected) {
           chatService.sendMessage(client, room.roomId, {
-            senderId: user.userId,
+            senderId: user.id,
             senderName: user.fullName,
             messageType: 'JOIN',
             content: `${user.fullName} joined the chat`,
@@ -87,7 +87,7 @@ function ChatWidget() {
     if (newMessage.trim() && stompClient && chatRoom) {
       const message = {
         roomId: chatRoom.roomId,
-        senderId: user.userId,
+        senderId: user.id,
         senderName: user.fullName,
         messageType: 'CHAT',
         content: newMessage,

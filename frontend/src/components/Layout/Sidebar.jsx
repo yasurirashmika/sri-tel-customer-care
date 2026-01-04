@@ -14,7 +14,7 @@ function Sidebar() {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Bills', icon: <ReceiptIcon />, path: '/bills' },
-    { text: 'Payments', icon: <PaymentIcon />, path: '/payments' },
+    { text: 'Payments', icon: <PaymentIcon />, path: '/payment' },
     { text: 'Services', icon: <SettingsIcon />, path: '/services' },
     { text: 'Chat Support', icon: <ChatIcon />, path: '/chat' },
   ];
