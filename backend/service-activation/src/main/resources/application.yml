@@ -4,12 +4,32 @@ server:
 spring:
   application:
     name: service-activation
+    
   datasource:
     url: jdbc:postgresql://localhost:5432/service_db
     username: postgres
-    password: Yasuri@123
+    password: "Yasuri@123"
+    driver-class-name: org.postgresql.Driver
+    
   jpa:
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    
+  # 👇 UPDATE THIS SECTION
   kafka:
     bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # This line fixes the ClassCastException by allowing Objects/Maps
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer 
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true

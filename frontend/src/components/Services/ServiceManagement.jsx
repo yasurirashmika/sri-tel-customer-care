@@ -1,240 +1,193 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Container, Grid, Typography, Card, CardContent, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  CircularProgress, Chip, Alert, CardActions
+  Box, Container, Grid, Typography, Card, CircularProgress, Switch, 
+  FormControlLabel, Paper, Snackbar, Alert, Avatar
 } from '@mui/material';
 import { 
-  Public as RoamingIcon, 
-  Wifi as DataIcon, 
-  MusicNote as RingtoneIcon, 
-  Phone as VoiceIcon, 
-  Message as SmsIcon,
-  Settings as DefaultIcon
+  Public, Wifi, MusicNote, Phone, Message, LibraryMusic 
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import Header from '../Layout/Header';
 import Sidebar from '../Layout/Sidebar';
 import serviceService from '../../services/serviceService';
 
-// 1. Define available services with metadata
-const AVAILABLE_SERVICES = [
-  { type: 'INTERNATIONAL_ROAMING', label: 'International Roaming', description: 'Stay connected globally.', icon: <RoamingIcon fontSize="large" /> },
-  { type: 'DATA_PACKAGE', label: 'Data Package', description: 'High speed internet add-ons.', icon: <DataIcon fontSize="large" /> },
-  { type: 'RING_TONE', label: 'Ring Tone', description: 'Custom tunes for callers.', icon: <RingtoneIcon fontSize="large" /> },
-  { type: 'VOICE_PACKAGE', label: 'Voice Package', description: 'Extra talk time bundles.', icon: <VoiceIcon fontSize="large" /> },
-  { type: 'SMS_PACKAGE', label: 'SMS Package', description: 'Bulk messaging bundles.', icon: <SmsIcon fontSize="large" /> },
-  { type: 'CALLER_TUNE', label: 'Caller Tune', description: 'Set songs as caller tunes.', icon: <RingtoneIcon fontSize="large" /> },
+// --- Configuration Data ---
+const SERVICES_CONFIG = [
+  { type: 'INTERNATIONAL_ROAMING', label: 'International Roaming', desc: 'Global roaming access.', icon: <Public />, color: '#1976d2', bg: '#e3f2fd' },
+  { type: 'DATA_PACKAGE', label: 'Data Package', desc: 'High-speed internet add-ons.', icon: <Wifi />, color: '#2e7d32', bg: '#e8f5e9' },
+  { type: 'RING_TONE', label: 'Ring Tone', desc: 'Custom ringtones.', icon: <MusicNote />, color: '#ed6c02', bg: '#fff3e0' },
+  { type: 'VOICE_PACKAGE', label: 'Voice Package', desc: 'Extra talk time bundles.', icon: <Phone />, color: '#9c27b0', bg: '#f3e5f5' },
+  { type: 'SMS_PACKAGE', label: 'SMS Package', desc: 'Bulk messaging bundles.', icon: <Message />, color: '#d32f2f', bg: '#ffebee' },
+  { type: 'CALLER_TUNE', label: 'Caller Tune', desc: 'Songs for your callers.', icon: <LibraryMusic />, color: '#0288d1', bg: '#e1f5fe' },
 ];
 
+// --- Sub-Component: Service Card (Fixed Layout) ---
+const ServiceCard = ({ config, isActive, isProcessing, onToggle }) => (
+  <Card 
+    elevation={isActive ? 4 : 1}
+    sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      borderRadius: 3,
+      border: isActive ? `2px solid ${config.color}` : '2px solid transparent',
+      transition: 'all 0.3s ease',
+      '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 }
+    }}
+  >
+    {/* 1. Content Area (Grows to fill space) */}
+    <Box sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <Avatar 
+        sx={{ 
+          width: 56, height: 56, mb: 2, 
+          bgcolor: isActive ? config.color : config.bg, 
+          color: isActive ? '#fff' : config.color 
+        }}
+      >
+        {config.icon}
+      </Avatar>
+      
+      <Typography variant="h6" fontWeight="bold" gutterBottom>
+        {config.label}
+      </Typography>
+      
+      <Typography variant="body2" color="text.secondary">
+        {config.desc}
+      </Typography>
+    </Box>
+
+    {/* 2. Action Footer (Fixed at bottom) */}
+    <Box 
+      sx={{ 
+        p: 2, 
+        bgcolor: isActive ? `${config.color}15` : '#f5f5f5', // Light tint when active, gray when inactive
+        display: 'flex', 
+        justifyContent: 'center',
+        borderTop: '1px solid',
+        borderColor: 'divider'
+      }}
+    >
+      {isProcessing ? (
+        <CircularProgress size={24} sx={{ color: config.color }} />
+      ) : (
+        <FormControlLabel
+          control={
+            <Switch 
+              checked={isActive} 
+              onChange={onToggle}
+              color="primary" // Uses theme primary color
+            />
+          }
+          label={
+            <Typography variant="body2" fontWeight="bold" sx={{ color: isActive ? config.color : 'text.secondary' }}>
+              {isActive ? 'Active' : 'Activate'}
+            </Typography>
+          }
+          sx={{ mr: 0 }} 
+        />
+      )}
+    </Box>
+  </Card>
+);
+
+// --- Main Component ---
 function ServiceManagement() {
   const { user } = useAuth();
-  const [userServices, setUserServices] = useState([]); // Services the user actually HAS
+  const [userServices, setUserServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
-  // State for the service being activated
-  const [selectedService, setSelectedService] = useState({
-    serviceType: '',
-    serviceName: '',
-    serviceCode: '',
-  });
+  const [processingId, setProcessingId] = useState(null);
+  const [notification, setNotification] = useState({ open: false, msg: '', type: 'success' });
 
-  useEffect(() => {
-    if (user) {
-      loadServices();
-    }
-  }, [user]);
+  useEffect(() => { if (user) loadServices(); }, [user]);
 
   const loadServices = async () => {
     try {
       const data = await serviceService.getUserServices(user.id);
-      setUserServices(data);
-    } catch (error) {
-      console.error('Error loading services:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOpenActivate = (serviceType) => {
-    // Pre-fill the type, user just enters name/code
-    setSelectedService({
-      serviceType: serviceType,
-      serviceName: '',
-      serviceCode: ''
-    });
-    setOpenDialog(true);
-  };
-
-  const handleActivate = async () => {
-    setError('');
-    setSuccess('');
-    try {
-      await serviceService.activateService({
-        userId: user.id,
-        mobileNumber: user.mobileNumber,
-        ...selectedService,
-      });
-      setSuccess('Service activated successfully!');
-      setOpenDialog(false);
-      loadServices();
+      setUserServices(data || []);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to activate service');
-    }
+      console.error(err);
+      notify('Failed to load services', 'error');
+    } finally { setLoading(false); }
   };
 
-  const handleDeactivate = async (serviceId) => {
-    if(!window.confirm("Are you sure you want to deactivate this service?")) return;
+  const handleToggle = async (template) => {
+    const activeSvc = userServices.find(s => s.serviceType === template.type && s.status === 'ACTIVE');
+    const isActive = !!activeSvc;
+    setProcessingId(template.type);
 
-    setError('');
-    setSuccess('');
-    setActionLoading(serviceId);
     try {
-      await serviceService.deactivateService(serviceId);
-      setSuccess('Service deactivated successfully!');
+      if (isActive) {
+        await serviceService.deactivateService(activeSvc.id);
+        notify(`${template.label} deactivated`);
+      } else {
+        await serviceService.activateService({
+          userId: user.id,
+          mobileNumber: user.mobileNumber,
+          serviceType: template.type,
+          serviceName: template.label,
+          serviceCode: `CODE_${template.type}_${Date.now()}`
+        });
+        notify(`${template.label} activated`);
+      }
       await loadServices();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to deactivate service');
-    } finally {
-      setActionLoading(null);
-    }
+      notify(err.response?.data?.message || 'Operation failed', 'error');
+    } finally { setProcessingId(null); }
   };
 
+  const notify = (msg, type = 'success') => setNotification({ open: true, msg, type });
+
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f4f6f8' }}>
       <Header />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Sidebar />
           </Grid>
           
-          <Grid item xs={12} md={9}>
-            <Typography variant="h4" gutterBottom>
-              Service Management
-            </Typography>
-
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+          <Grid size={{ xs: 12, md: 9 }}>
+            {/* Page Title Banner */}
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 3, mb: 3, borderRadius: 2, 
+                background: 'linear-gradient(to right, #1565c0, #42a5f5)', 
+                color: '#fff' 
+              }}
+            >
+              <Typography variant="h5" fontWeight="bold">Service Management</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Manage your telecommunication subscriptions.
+              </Typography>
+            </Paper>
 
             {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <CircularProgress />
-              </Box>
+              <Box display="flex" justifyContent="center" p={5}><CircularProgress /></Box>
             ) : (
               <Grid container spacing={3}>
-                {AVAILABLE_SERVICES.map((serviceTemplate) => {
-                  // Check if user already has this service active
-                  const activeInstance = userServices.find(
-                    us => us.serviceType === serviceTemplate.type && us.status === 'ACTIVE'
-                  );
-
+                {SERVICES_CONFIG.map((config) => {
+                  const isActive = userServices.some(s => s.serviceType === config.type && s.status === 'ACTIVE');
                   return (
-                    <Grid item xs={12} sm={6} md={4} key={serviceTemplate.type}>
-                      <Card 
-                        sx={{ 
-                          height: '100%', 
-                          display: 'flex', 
-                          flexDirection: 'column',
-                          border: activeInstance ? '2px solid #4caf50' : '1px solid #e0e0e0',
-                          backgroundColor: activeInstance ? '#f9fff9' : '#fff'
-                        }}
-                      >
-                        <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-                          <Box sx={{ color: activeInstance ? 'primary.main' : 'text.secondary', mb: 2 }}>
-                            {serviceTemplate.icon}
-                          </Box>
-                          <Typography variant="h6" component="div">
-                            {serviceTemplate.label}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            {serviceTemplate.description}
-                          </Typography>
-
-                          {activeInstance ? (
-                            <Box>
-                              <Chip label="Active" color="success" size="small" sx={{ mb: 1 }} />
-                              <Typography variant="caption" display="block">
-                                {activeInstance.serviceName}
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Chip label="Not Active" variant="outlined" size="small" />
-                          )}
-                        </CardContent>
-                        
-                        <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
-                          {activeInstance ? (
-                            <Button 
-                              variant="outlined" 
-                              color="error"
-                              size="small"
-                              disabled={actionLoading === activeInstance.id}
-                              onClick={() => handleDeactivate(activeInstance.id)}
-                            >
-                              {actionLoading === activeInstance.id ? 'Processing...' : 'Deactivate'}
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="contained" 
-                              color="primary"
-                              size="small"
-                              onClick={() => handleOpenActivate(serviceTemplate.type)}
-                            >
-                              Activate Now
-                            </Button>
-                          )}
-                        </CardActions>
-                      </Card>
+                    <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={config.type}>
+                      <ServiceCard 
+                        config={config} 
+                        isActive={isActive} 
+                        isProcessing={processingId === config.type}
+                        onToggle={() => handleToggle(config)}
+                      />
                     </Grid>
                   );
                 })}
               </Grid>
             )}
-
-            {/* Dialog for details when Activating */}
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="xs" fullWidth>
-              <DialogTitle>Activate {AVAILABLE_SERVICES.find(s => s.type === selectedService.serviceType)?.label}</DialogTitle>
-              <DialogContent>
-                <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
-                  Please provide details to activate this service.
-                </Typography>
-                
-                <TextField
-                  fullWidth
-                  label="Package Name / Alias"
-                  value={selectedService.serviceName}
-                  onChange={(e) => setSelectedService({ ...selectedService, serviceName: e.target.value })}
-                  margin="dense"
-                  required
-                  placeholder="e.g. My Roaming"
-                />
-                
-                <TextField
-                  fullWidth
-                  label="Activation Code"
-                  value={selectedService.serviceCode}
-                  onChange={(e) => setSelectedService({ ...selectedService, serviceCode: e.target.value })}
-                  margin="dense"
-                  required
-                  helperText="e.g., *123# or Promo Code"
-                />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-                <Button onClick={handleActivate} variant="contained" disabled={!selectedService.serviceName || !selectedService.serviceCode}>
-                  Confirm Activation
-                </Button>
-              </DialogActions>
-            </Dialog>
-
           </Grid>
         </Grid>
       </Container>
+      
+      <Snackbar open={notification.open} autoHideDuration={3000} onClose={() => setNotification({ ...notification, open: false })} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity={notification.type} variant="filled">{notification.msg}</Alert>
+      </Snackbar>
     </Box>
   );
 }
