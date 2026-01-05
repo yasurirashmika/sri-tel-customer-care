@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Container, Grid, Typography, Card, CardContent, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  CircularProgress, Chip, Alert, CardActions
+  CircularProgress, Chip, Alert, CardActions, Snackbar
 } from '@mui/material';
 import { 
   Public as RoamingIcon, 
@@ -10,39 +9,66 @@ import {
   MusicNote as RingtoneIcon, 
   Phone as VoiceIcon, 
   Message as SmsIcon,
-  Settings as DefaultIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import Header from '../Layout/Header';
 import Sidebar from '../Layout/Sidebar';
 import serviceService from '../../services/serviceService';
 
-// 1. Define available services with metadata
+// Define available services with metadata
 const AVAILABLE_SERVICES = [
-  { type: 'INTERNATIONAL_ROAMING', label: 'International Roaming', description: 'Stay connected globally.', icon: <RoamingIcon fontSize="large" /> },
-  { type: 'DATA_PACKAGE', label: 'Data Package', description: 'High speed internet add-ons.', icon: <DataIcon fontSize="large" /> },
-  { type: 'RING_TONE', label: 'Ring Tone', description: 'Custom tunes for callers.', icon: <RingtoneIcon fontSize="large" /> },
-  { type: 'VOICE_PACKAGE', label: 'Voice Package', description: 'Extra talk time bundles.', icon: <VoiceIcon fontSize="large" /> },
-  { type: 'SMS_PACKAGE', label: 'SMS Package', description: 'Bulk messaging bundles.', icon: <SmsIcon fontSize="large" /> },
-  { type: 'CALLER_TUNE', label: 'Caller Tune', description: 'Set songs as caller tunes.', icon: <RingtoneIcon fontSize="large" /> },
+  { 
+    type: 'INTERNATIONAL_ROAMING', 
+    label: 'International Roaming', 
+    description: 'Stay connected while traveling abroad with our global roaming service.', 
+    icon: <RoamingIcon fontSize="large" />,
+    color: '#1976d2'
+  },
+  { 
+    type: 'DATA_PACKAGE', 
+    label: 'Data Package', 
+    description: 'High-speed internet add-ons for seamless browsing and streaming.', 
+    icon: <DataIcon fontSize="large" />,
+    color: '#2e7d32'
+  },
+  { 
+    type: 'RING_TONE', 
+    label: 'Ring Tone', 
+    description: 'Personalize your phone with custom ringtones.', 
+    icon: <RingtoneIcon fontSize="large" />,
+    color: '#ed6c02'
+  },
+  { 
+    type: 'VOICE_PACKAGE', 
+    label: 'Voice Package', 
+    description: 'Extra talk time bundles for unlimited conversations.', 
+    icon: <VoiceIcon fontSize="large" />,
+    color: '#9c27b0'
+  },
+  { 
+    type: 'SMS_PACKAGE', 
+    label: 'SMS Package', 
+    description: 'Bulk messaging bundles for staying in touch.', 
+    icon: <SmsIcon fontSize="large" />,
+    color: '#d32f2f'
+  },
+  { 
+    type: 'CALLER_TUNE', 
+    label: 'Caller Tune', 
+    description: 'Set custom songs as caller tunes for your callers to enjoy.', 
+    icon: <RingtoneIcon fontSize="large" />,
+    color: '#0288d1'
+  },
 ];
 
 function ServiceManagement() {
   const { user } = useAuth();
-  const [userServices, setUserServices] = useState([]); // Services the user actually HAS
+  const [userServices, setUserServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
-  // State for the service being activated
-  const [selectedService, setSelectedService] = useState({
-    serviceType: '',
-    serviceName: '',
-    serviceCode: '',
-  });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
+  // Load user services on component mount
   useEffect(() => {
     if (user) {
       loadServices();
@@ -51,79 +77,99 @@ function ServiceManagement() {
 
   const loadServices = async () => {
     try {
+      setLoading(true);
       const data = await serviceService.getUserServices(user.id);
       setUserServices(data);
     } catch (error) {
       console.error('Error loading services:', error);
+      showSnackbar('Failed to load services', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenActivate = (serviceType) => {
-    // Pre-fill the type, user just enters name/code
-    setSelectedService({
-      serviceType: serviceType,
-      serviceName: '',
-      serviceCode: ''
-    });
-    setOpenDialog(true);
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
 
-  const handleActivate = async () => {
-    setError('');
-    setSuccess('');
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleActivate = async (serviceType, serviceName) => {
+    const confirmActivate = window.confirm(
+      `Are you sure you want to activate ${serviceName}?`
+    );
+    
+    if (!confirmActivate) return;
+
+    setActionLoading(serviceType);
     try {
       await serviceService.activateService({
         userId: user.id,
         mobileNumber: user.mobileNumber,
-        ...selectedService,
+        serviceType: serviceType,
+        serviceName: serviceName,
+        serviceCode: `CODE_${serviceType}_${Date.now()}` // Auto-generated code
       });
-      setSuccess('Service activated successfully!');
-      setOpenDialog(false);
-      loadServices();
+      
+      showSnackbar(`${serviceName} activated successfully!`, 'success');
+      await loadServices(); // Refresh the services list
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to activate service');
+      const errorMessage = err.response?.data?.message || `Failed to activate ${serviceName}`;
+      showSnackbar(errorMessage, 'error');
+      console.error('Activation error:', err);
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleDeactivate = async (serviceId) => {
-    if(!window.confirm("Are you sure you want to deactivate this service?")) return;
+  const handleDeactivate = async (serviceId, serviceName) => {
+    const confirmDeactivate = window.confirm(
+      `Are you sure you want to deactivate ${serviceName}?`
+    );
+    
+    if (!confirmDeactivate) return;
 
-    setError('');
-    setSuccess('');
     setActionLoading(serviceId);
     try {
       await serviceService.deactivateService(serviceId);
-      setSuccess('Service deactivated successfully!');
-      await loadServices();
+      showSnackbar(`${serviceName} deactivated successfully!`, 'success');
+      await loadServices(); // Refresh the services list
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to deactivate service');
+      const errorMessage = err.response?.data?.message || `Failed to deactivate ${serviceName}`;
+      showSnackbar(errorMessage, 'error');
+      console.error('Deactivation error:', err);
     } finally {
       setActionLoading(null);
     }
   };
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
       <Header />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Grid container spacing={3}>
+          {/* Sidebar */}
           <Grid item xs={12} md={3}>
             <Sidebar />
           </Grid>
           
+          {/* Main Content */}
           <Grid item xs={12} md={9}>
-            <Typography variant="h4" gutterBottom>
-              Service Management
-            </Typography>
-
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h4" gutterBottom fontWeight="600" color="primary.main">
+                Service Management
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Activate or deactivate your telecommunication services with a single click.
+              </Typography>
+            </Box>
 
             {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <CircularProgress />
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                <CircularProgress size={60} />
               </Box>
             ) : (
               <Grid container spacing={3}>
@@ -133,59 +179,125 @@ function ServiceManagement() {
                     us => us.serviceType === serviceTemplate.type && us.status === 'ACTIVE'
                   );
 
+                  const isProcessing = actionLoading === serviceTemplate.type || 
+                                      (activeInstance && actionLoading === activeInstance.id);
+
                   return (
                     <Grid item xs={12} sm={6} md={4} key={serviceTemplate.type}>
                       <Card 
+                        elevation={activeInstance ? 4 : 2}
                         sx={{ 
                           height: '100%', 
                           display: 'flex', 
                           flexDirection: 'column',
-                          border: activeInstance ? '2px solid #4caf50' : '1px solid #e0e0e0',
-                          backgroundColor: activeInstance ? '#f9fff9' : '#fff'
+                          border: activeInstance ? `3px solid ${serviceTemplate.color}` : '1px solid #e0e0e0',
+                          backgroundColor: activeInstance ? '#fafafa' : '#fff',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: 6
+                          }
                         }}
                       >
-                        <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-                          <Box sx={{ color: activeInstance ? 'primary.main' : 'text.secondary', mb: 2 }}>
+                        <CardContent sx={{ flexGrow: 1, textAlign: 'center', pt: 3 }}>
+                          {/* Icon */}
+                          <Box 
+                            sx={{ 
+                              color: activeInstance ? serviceTemplate.color : 'text.secondary',
+                              mb: 2,
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}
+                          >
                             {serviceTemplate.icon}
                           </Box>
-                          <Typography variant="h6" component="div">
+
+                          {/* Service Name */}
+                          <Typography variant="h6" component="div" fontWeight="600" gutterBottom>
                             {serviceTemplate.label}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+
+                          {/* Description */}
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: '48px' }}>
                             {serviceTemplate.description}
                           </Typography>
 
+                          {/* Status Chip */}
                           {activeInstance ? (
-                            <Box>
-                              <Chip label="Active" color="success" size="small" sx={{ mb: 1 }} />
-                              <Typography variant="caption" display="block">
-                                {activeInstance.serviceName}
-                              </Typography>
+                            <Box sx={{ mt: 2 }}>
+                              <Chip 
+                                label="Active" 
+                                sx={{ 
+                                  backgroundColor: serviceTemplate.color,
+                                  color: '#fff',
+                                  fontWeight: '600',
+                                  mb: 1
+                                }} 
+                                size="small" 
+                              />
+                              {activeInstance.serviceName && (
+                                <Typography variant="caption" display="block" color="text.secondary">
+                                  {activeInstance.serviceName}
+                                </Typography>
+                              )}
                             </Box>
                           ) : (
-                            <Chip label="Not Active" variant="outlined" size="small" />
+                            <Chip 
+                              label="Inactive" 
+                              variant="outlined" 
+                              size="small"
+                              sx={{ mt: 2 }}
+                            />
                           )}
                         </CardContent>
                         
-                        <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+                        {/* Action Button */}
+                        <CardActions sx={{ justifyContent: 'center', pb: 3, pt: 0 }}>
                           {activeInstance ? (
                             <Button 
                               variant="outlined" 
                               color="error"
-                              size="small"
-                              disabled={actionLoading === activeInstance.id}
-                              onClick={() => handleDeactivate(activeInstance.id)}
+                              size="medium"
+                              fullWidth
+                              sx={{ mx: 2, fontWeight: '600' }}
+                              disabled={isProcessing}
+                              onClick={() => handleDeactivate(activeInstance.id, serviceTemplate.label)}
                             >
-                              {actionLoading === activeInstance.id ? 'Processing...' : 'Deactivate'}
+                              {isProcessing ? (
+                                <>
+                                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                                  Deactivating...
+                                </>
+                              ) : (
+                                'Deactivate'
+                              )}
                             </Button>
                           ) : (
                             <Button 
                               variant="contained" 
-                              color="primary"
-                              size="small"
-                              onClick={() => handleOpenActivate(serviceTemplate.type)}
+                              size="medium"
+                              fullWidth
+                              sx={{ 
+                                mx: 2, 
+                                fontWeight: '600',
+                                backgroundColor: serviceTemplate.color,
+                                '&:hover': {
+                                  backgroundColor: serviceTemplate.color,
+                                  filter: 'brightness(0.9)'
+                                }
+                              }}
+                              disabled={isProcessing}
+                              onClick={() => handleActivate(serviceTemplate.type, serviceTemplate.label)}
                             >
-                              Activate Now
+                              {isProcessing ? (
+                                <>
+                                  <CircularProgress size={20} sx={{ mr: 1, color: '#fff' }} />
+                                  Activating...
+                                </>
+                              ) : (
+                                'Activate Now'
+                              )}
                             </Button>
                           )}
                         </CardActions>
@@ -195,46 +307,26 @@ function ServiceManagement() {
                 })}
               </Grid>
             )}
-
-            {/* Dialog for details when Activating */}
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="xs" fullWidth>
-              <DialogTitle>Activate {AVAILABLE_SERVICES.find(s => s.type === selectedService.serviceType)?.label}</DialogTitle>
-              <DialogContent>
-                <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
-                  Please provide details to activate this service.
-                </Typography>
-                
-                <TextField
-                  fullWidth
-                  label="Package Name / Alias"
-                  value={selectedService.serviceName}
-                  onChange={(e) => setSelectedService({ ...selectedService, serviceName: e.target.value })}
-                  margin="dense"
-                  required
-                  placeholder="e.g. My Roaming"
-                />
-                
-                <TextField
-                  fullWidth
-                  label="Activation Code"
-                  value={selectedService.serviceCode}
-                  onChange={(e) => setSelectedService({ ...selectedService, serviceCode: e.target.value })}
-                  margin="dense"
-                  required
-                  helperText="e.g., *123# or Promo Code"
-                />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-                <Button onClick={handleActivate} variant="contained" disabled={!selectedService.serviceName || !selectedService.serviceCode}>
-                  Confirm Activation
-                </Button>
-              </DialogActions>
-            </Dialog>
-
           </Grid>
         </Grid>
       </Container>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
