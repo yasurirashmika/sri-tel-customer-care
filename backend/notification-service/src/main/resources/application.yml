@@ -1,0 +1,92 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: notification-service
+  
+  # PostgreSQL Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5400/notification_db
+    username: postgres
+    password: kavi
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: billingEvent:lk.sritel.notification.kafka.event.BillingEvent,paymentEvent:lk.sritel.notification.kafka.event.PaymentEvent,serviceActivationEvent:lk.sritel.notification.kafka.event.ServiceActivationEvent
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  
+  # Mail Configuration (Gmail Example)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: kavindaya.vishwani@gmail.com
+    password: strr eash cdew zidc
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+    default-encoding: UTF-8
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+# Kafka Topics
+kafka:
+  topics:
+    billing: billing-events
+    payment: payment-events
+    service-activation: service-activation-events
+    notifications: notification-events
+
+# SMS Configuration (Mock - Replace with actual provider)
+sms:
+  provider:
+    api-url: https://api.sms-provider.com/send
+    api-key: your-sms-api-key
+    sender-id: SRITEL
+
+# Notification Settings
+notification:
+  email:
+    from: noreply@sritel.lk
+    enabled: true
+  sms:
+    enabled: true
+  push:
+    enabled: true
+  batch-size: 100
+  retry-attempts: 3

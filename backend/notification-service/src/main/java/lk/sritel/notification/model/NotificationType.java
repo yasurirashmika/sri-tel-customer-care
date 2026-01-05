@@ -1,0 +1,15 @@
+package lk.sritel.notification.model;
+
+public enum NotificationType {
+    BILL_GENERATED,
+    BILL_DUE_REMINDER,
+    PAYMENT_SUCCESS,
+    PAYMENT_FAILED,
+    SERVICE_ACTIVATED,
+    SERVICE_DEACTIVATED,
+    SERVICE_DISCONNECTION_WARNING,
+    ACCOUNT_CREATED,
+    PASSWORD_RESET,
+    PROMOTIONAL,
+    SYSTEM_ALERT
+}
