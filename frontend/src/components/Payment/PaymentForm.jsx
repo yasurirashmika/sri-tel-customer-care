@@ -87,28 +87,32 @@ function PaymentForm() {
   const amountToPay = bill ? bill.totalAmount - bill.paidAmount : 0;
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f4f6f8' }}>
       <Header />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={3}>
+          {/* Sidebar */}
+          <Grid size={{ xs: 12, md: 3 }}>
             <Sidebar />
           </Grid>
           
-          <Grid item xs={12} md={9}>
+          {/* Main Content */}
+          <Grid size={{ xs: 12, md: 9 }}>
+            {/* 👇 FIXED: Changed navigation to '/bills' (My Bills List) */}
             <Button 
               startIcon={<ArrowBackIcon />} 
-              onClick={() => navigate(`/bills/${billId}`)}
-              sx={{ mb: 2 }}
+              onClick={() => navigate('/bills')} 
+              sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}
             >
-              Back to Bill Details
+              Back to My Bills
             </Button>
 
             <Grid container spacing={3}>
-              <Grid item xs={12} md={8}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h5" gutterBottom>
+              {/* Payment Form Column */}
+              <Grid size={{ xs: 12, md: 8 }}>
+                <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
+                  <CardContent sx={{ p: 4 }}>
+                    <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
                       Payment Information
                     </Typography>
 
@@ -117,8 +121,10 @@ function PaymentForm() {
 
                     <Box component="form" onSubmit={handleSubmit}>
                       <FormControl sx={{ mb: 3 }}>
-                        <FormLabel>Payment Method</FormLabel>
+                        <FormLabel id="payment-method-label">Payment Method</FormLabel>
                         <RadioGroup
+                          row
+                          aria-labelledby="payment-method-label"
                           name="paymentMethod"
                           value={paymentData.paymentMethod}
                           onChange={handleChange}
@@ -149,27 +155,25 @@ function PaymentForm() {
                         required
                       />
 
-                      <Grid container spacing={2}>
-                        <Grid item xs={6}>
+                      <Grid container spacing={2} sx={{ mt: 1 }}>
+                        <Grid size={{ xs: 6 }}>
                           <TextField
                             fullWidth
                             label="Expiry Date"
                             name="cardExpiry"
                             value={paymentData.cardExpiry}
                             onChange={handleChange}
-                            margin="normal"
                             required
                             placeholder="MM/YY"
                           />
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid size={{ xs: 6 }}>
                           <TextField
                             fullWidth
                             label="CVV"
                             name="cvv"
                             value={paymentData.cvv}
                             onChange={handleChange}
-                            margin="normal"
                             required
                             type="password"
                             placeholder="123"
@@ -183,40 +187,41 @@ function PaymentForm() {
                         variant="contained"
                         size="large"
                         fullWidth
-                        sx={{ mt: 3 }}
+                        sx={{ mt: 4, height: 50, borderRadius: 2 }}
                         disabled={processing}
                       >
-                        {processing ? <CircularProgress size={24} /> : `Pay Rs. ${amountToPay.toFixed(2)}`}
+                        {processing ? <CircularProgress size={24} color="inherit" /> : `Pay Rs. ${amountToPay.toFixed(2)}`}
                       </Button>
                     </Box>
                   </CardContent>
                 </Card>
               </Grid>
 
-              <Grid item xs={12} md={4}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
+              {/* Payment Summary Column */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#fafafa' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Typography variant="h6" gutterBottom fontWeight="bold">
                       Payment Summary
                     </Typography>
-                    <Box sx={{ mt: 2 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography>Bill Number:</Typography>
-                        <Typography>{bill?.billNumber}</Typography>
+                    <Box sx={{ mt: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography color="text.secondary">Bill Number:</Typography>
+                        <Typography fontWeight="medium">{bill?.billNumber}</Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography>Total Amount:</Typography>
-                        <Typography>Rs. {bill?.totalAmount.toFixed(2)}</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography color="text.secondary">Total Amount:</Typography>
+                        <Typography fontWeight="medium">Rs. {bill?.totalAmount.toFixed(2)}</Typography>
                       </Box>
                       {bill?.paidAmount > 0 && (
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography>Already Paid:</Typography>
-                          <Typography>Rs. {bill?.paidAmount.toFixed(2)}</Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                          <Typography color="success.main">Already Paid:</Typography>
+                          <Typography color="success.main">- Rs. {bill?.paidAmount.toFixed(2)}</Typography>
                         </Box>
                       )}
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, pt: 2, borderTop: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, pt: 2, borderTop: '1px dashed #bdbdbd' }}>
                         <Typography variant="h6">Amount to Pay:</Typography>
-                        <Typography variant="h6">Rs. {amountToPay.toFixed(2)}</Typography>
+                        <Typography variant="h6" color="primary">Rs. {amountToPay.toFixed(2)}</Typography>
                       </Box>
                     </Box>
                   </CardContent>

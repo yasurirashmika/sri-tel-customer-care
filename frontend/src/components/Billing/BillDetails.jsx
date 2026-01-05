@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Container, Grid, Typography, Card, CardContent, Button,
-  CircularProgress, Divider, Table, TableBody, TableCell, TableRow, Chip
+  CircularProgress, Divider, Table, TableBody, TableCell, TableContainer, 
+  TableHead, TableRow, Paper, Chip, Stack
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../Layout/Header';
@@ -9,6 +10,7 @@ import Sidebar from '../Layout/Sidebar';
 import billingService from '../../services/billingService';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PaymentIcon from '@mui/icons-material/Payment';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 function BillDetails() {
   const { billId } = useParams();
@@ -29,6 +31,15 @@ function BillDetails() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getStatusChip = (status) => {
+    const colorMap = {
+      'PAID': 'success',
+      'UNPAID': 'error',
+      'PARTIALLY_PAID': 'warning'
+    };
+    return <Chip label={status} color={colorMap[status] || 'default'} fontWeight="bold" />;
   };
 
   if (loading) {
@@ -54,102 +65,140 @@ function BillDetails() {
   }
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f4f6f8' }}>
       <Header />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={3}>
+          {/* Sidebar */}
+          <Grid size={{ xs: 12, md: 3 }}>
             <Sidebar />
           </Grid>
           
-          <Grid item xs={12} md={9}>
-            <Button 
-              startIcon={<ArrowBackIcon />} 
-              onClick={() => navigate('/bills')}
-              sx={{ mb: 2 }}
-            >
-              Back to Bills
-            </Button>
+          {/* Main Content */}
+          <Grid size={{ xs: 12, md: 9 }}>
+            
+            {/* Header / Nav */}
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                <Button 
+                  startIcon={<ArrowBackIcon />} 
+                  onClick={() => navigate('/bills')}
+                  sx={{ color: 'text.secondary', fontWeight: 'bold' }}
+                >
+                  Back to Bills
+                </Button>
+            </Stack>
 
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h4">Bill Details</Typography>
-                  <Chip label={bill.status} color={bill.status === 'PAID' ? 'success' : 'warning'} />
+            <Card elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              {/* Blue Header Strip */}
+              <Box sx={{ 
+                p: 3, 
+                background: 'linear-gradient(to right, #1565c0, #42a5f5)', 
+                color: 'white',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                    <DescriptionIcon fontSize="large" sx={{ opacity: 0.8 }} />
+                    <Box>
+                        <Typography variant="h5" fontWeight="bold">Invoice Details</Typography>
+                        <Typography variant="body2" sx={{ opacity: 0.9 }}>#{bill.billNumber}</Typography>
+                    </Box>
                 </Box>
+                {getStatusChip(bill.status)}
+              </Box>
 
-                <Grid container spacing={3}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography variant="subtitle2" color="text.secondary">Bill Number</Typography>
-                    <Typography variant="h6">{bill.billNumber}</Typography>
+              <CardContent sx={{ p: 4 }}>
+                {/* Bill Metadata Grid */}
+                <Grid container spacing={4} sx={{ mb: 4 }}>
+                  <Grid size={{ xs: 6, md: 3 }}>
+                    <Typography variant="caption" color="text.secondary" fontWeight="bold">BILLING PERIOD</Typography>
+                    <Typography variant="subtitle1" fontWeight="medium">{bill.billingPeriod}</Typography>
                   </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography variant="subtitle2" color="text.secondary">Billing Period</Typography>
-                    <Typography variant="h6">{bill.billingPeriod}</Typography>
+                  <Grid size={{ xs: 6, md: 3 }}>
+                    <Typography variant="caption" color="text.secondary" fontWeight="bold">BILL DATE</Typography>
+                    <Typography variant="subtitle1" fontWeight="medium">{new Date(bill.billDate).toLocaleDateString()}</Typography>
                   </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography variant="subtitle2" color="text.secondary">Bill Date</Typography>
-                    <Typography variant="h6">{new Date(bill.billDate).toLocaleDateString()}</Typography>
+                  <Grid size={{ xs: 6, md: 3 }}>
+                    <Typography variant="caption" color="text.secondary" fontWeight="bold">DUE DATE</Typography>
+                    <Typography variant="subtitle1" fontWeight="medium" color="error.main">{new Date(bill.dueDate).toLocaleDateString()}</Typography>
                   </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography variant="subtitle2" color="text.secondary">Due Date</Typography>
-                    <Typography variant="h6">{new Date(bill.dueDate).toLocaleDateString()}</Typography>
+                  <Grid size={{ xs: 6, md: 3 }}>
+                    <Typography variant="caption" color="text.secondary" fontWeight="bold">MOBILE NUMBER</Typography>
+                    <Typography variant="subtitle1" fontWeight="medium">{bill.mobileNumber}</Typography>
                   </Grid>
                 </Grid>
 
-                <Divider sx={{ my: 3 }} />
+                <Divider sx={{ mb: 4 }} />
 
-                <Typography variant="h6" gutterBottom>Bill Items</Typography>
-                <Table>
-                  <TableBody>
-                    {bill.items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell>{item.chargeType}</TableCell>
-                        <TableCell align="right">Qty: {item.quantity}</TableCell>
-                        <TableCell align="right">Rs. {item.amount.toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow>
-                      <TableCell colSpan={3} align="right">
-                        <Typography variant="h6">Total:</Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="h6">Rs. {bill.totalAmount.toFixed(2)}</Typography>
-                      </TableCell>
-                    </TableRow>
-                    {bill.paidAmount > 0 && (
+                {/* Items Table */}
+                <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>Breakdown</Typography>
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                  <Table>
+                    <TableHead sx={{ bgcolor: '#f5f5f5' }}>
                       <TableRow>
-                        <TableCell colSpan={3} align="right">
-                          <Typography>Paid:</Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography>Rs. {bill.paidAmount.toFixed(2)}</Typography>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Description</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Type</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>Quantity</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>Amount (Rs.)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {bill.items.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>{item.description}</TableCell>
+                          <TableCell>
+                            <Chip label={item.chargeType} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
+                          </TableCell>
+                          <TableCell align="right">{item.quantity}</TableCell>
+                          <TableCell align="right">{item.amount.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                      
+                      {/* Summary Rows */}
+                      <TableRow sx={{ bgcolor: '#fafafa' }}>
+                        <TableCell colSpan={3} align="right" sx={{ fontWeight: 'bold' }}>Total Amount</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                          Rs. {bill.totalAmount.toFixed(2)}
                         </TableCell>
                       </TableRow>
-                    )}
-                    {bill.paidAmount > 0 && bill.paidAmount < bill.totalAmount && (
-                      <TableRow>
-                        <TableCell colSpan={3} align="right">
-                          <Typography variant="h6">Balance:</Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="h6">
+                      
+                      {bill.paidAmount > 0 && (
+                        <TableRow sx={{ bgcolor: '#f0fdf4' }}>
+                          <TableCell colSpan={3} align="right" sx={{ color: 'success.main', fontWeight: 'medium' }}>Paid Amount</TableCell>
+                          <TableCell align="right" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                            - Rs. {bill.paidAmount.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {(bill.status === 'UNPAID' || bill.status === 'PARTIALLY_PAID') && (
+                        <TableRow>
+                          <TableCell colSpan={3} align="right" sx={{ fontWeight: 'bold', color: 'primary.main', fontSize: '1.1rem' }}>
+                            Balance Due
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main', fontSize: '1.2rem' }}>
                             Rs. {(bill.totalAmount - bill.paidAmount).toFixed(2)}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
+                {/* Footer Actions */}
                 {(bill.status === 'UNPAID' || bill.status === 'OVERDUE' || bill.status === 'PARTIALLY_PAID') && (
-                  <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
                     <Button
                       variant="contained"
                       size="large"
                       startIcon={<PaymentIcon />}
                       onClick={() => navigate(`/payment/${bill.id}`)}
+                      sx={{ 
+                        borderRadius: 2, 
+                        px: 4, 
+                        py: 1.5,
+                        background: 'linear-gradient(to right, #d32f2f, #ef5350)',
+                        boxShadow: 2
+                      }}
                     >
                       Pay Now
                     </Button>
