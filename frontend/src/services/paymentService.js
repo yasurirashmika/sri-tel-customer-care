@@ -2,17 +2,17 @@ import api from './api';
 
 const paymentService = {
   processPayment: async (paymentData) => {
-    const response = await api.post('/payments/process', paymentData);
+    const response = await api.post('/api/payments/process', paymentData);
     return response.data;
   },
 
   getUserPayments: async (userId) => {
-    const response = await api.get(`/payments/user/${userId}`);
+    const response = await api.get(`/api/payments/user/${userId}`);
     return response.data;
   },
 
   getPaymentById: async (paymentId) => {
-    const response = await api.get(`/payments/${paymentId}`);
+    const response = await api.get(`/api/payments/${paymentId}`);
     return response.data;
   },
 };

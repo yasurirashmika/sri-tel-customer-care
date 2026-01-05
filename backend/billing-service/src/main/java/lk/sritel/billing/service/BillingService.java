@@ -75,6 +75,11 @@ public class BillingService {
                 .status(BillStatus.UNPAID)
                 .build();
         
+        // ---------------------------------------------------------
+        // ✅ FIX: Initialize the items list to prevent NullPointerException
+        // ---------------------------------------------------------
+        bill.setItems(new ArrayList<>()); 
+
         // Add sample bill items
         BillItem voiceCharges = BillItem.builder()
                 .bill(bill)
@@ -108,6 +113,7 @@ public class BillingService {
                 .quantity(1)
                 .build();
         
+        // Now this line is safe because items list is initialized
         bill.getItems().addAll(Arrays.asList(voiceCharges, dataCharges, smsCharges, subscription));
         
         // Calculate total
@@ -196,7 +202,10 @@ public class BillingService {
     }
     
     private BillResponse mapToResponse(Bill bill) {
-        List<BillItemDto> itemDtos = bill.getItems().stream()
+        // Safety check for null items in response mapping as well
+        List<BillItem> items = bill.getItems() != null ? bill.getItems() : new ArrayList<>();
+
+        List<BillItemDto> itemDtos = items.stream()
                 .map(item -> BillItemDto.builder()
                         .id(item.getId())
                         .description(item.getDescription())
