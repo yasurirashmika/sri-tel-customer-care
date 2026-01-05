@@ -1,307 +1,181 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Container, Grid, Typography, Card, CardContent, Button,
-  CircularProgress, Chip, Alert, CardActions, Snackbar
+  Box, Container, Grid, Typography, Card, CircularProgress, Switch, 
+  FormControlLabel, Paper, Snackbar, Alert, Avatar
 } from '@mui/material';
 import { 
-  Public as RoamingIcon, 
-  Wifi as DataIcon, 
-  MusicNote as RingtoneIcon, 
-  Phone as VoiceIcon, 
-  Message as SmsIcon,
+  Public, Wifi, MusicNote, Phone, Message, LibraryMusic 
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import Header from '../Layout/Header';
 import Sidebar from '../Layout/Sidebar';
 import serviceService from '../../services/serviceService';
 
-// Define available services with metadata
-const AVAILABLE_SERVICES = [
-  { 
-    type: 'INTERNATIONAL_ROAMING', 
-    label: 'International Roaming', 
-    description: 'Stay connected while traveling abroad with our global roaming service.', 
-    icon: <RoamingIcon fontSize="large" />,
-    color: '#1976d2'
-  },
-  { 
-    type: 'DATA_PACKAGE', 
-    label: 'Data Package', 
-    description: 'High-speed internet add-ons for seamless browsing and streaming.', 
-    icon: <DataIcon fontSize="large" />,
-    color: '#2e7d32'
-  },
-  { 
-    type: 'RING_TONE', 
-    label: 'Ring Tone', 
-    description: 'Personalize your phone with custom ringtones.', 
-    icon: <RingtoneIcon fontSize="large" />,
-    color: '#ed6c02'
-  },
-  { 
-    type: 'VOICE_PACKAGE', 
-    label: 'Voice Package', 
-    description: 'Extra talk time bundles for unlimited conversations.', 
-    icon: <VoiceIcon fontSize="large" />,
-    color: '#9c27b0'
-  },
-  { 
-    type: 'SMS_PACKAGE', 
-    label: 'SMS Package', 
-    description: 'Bulk messaging bundles for staying in touch.', 
-    icon: <SmsIcon fontSize="large" />,
-    color: '#d32f2f'
-  },
-  { 
-    type: 'CALLER_TUNE', 
-    label: 'Caller Tune', 
-    description: 'Set custom songs as caller tunes for your callers to enjoy.', 
-    icon: <RingtoneIcon fontSize="large" />,
-    color: '#0288d1'
-  },
+// --- Configuration Data ---
+const SERVICES_CONFIG = [
+  { type: 'INTERNATIONAL_ROAMING', label: 'International Roaming', desc: 'Global roaming access.', icon: <Public />, color: '#1976d2', bg: '#e3f2fd' },
+  { type: 'DATA_PACKAGE', label: 'Data Package', desc: 'High-speed internet add-ons.', icon: <Wifi />, color: '#2e7d32', bg: '#e8f5e9' },
+  { type: 'RING_TONE', label: 'Ring Tone', desc: 'Custom ringtones.', icon: <MusicNote />, color: '#ed6c02', bg: '#fff3e0' },
+  { type: 'VOICE_PACKAGE', label: 'Voice Package', desc: 'Extra talk time bundles.', icon: <Phone />, color: '#9c27b0', bg: '#f3e5f5' },
+  { type: 'SMS_PACKAGE', label: 'SMS Package', desc: 'Bulk messaging bundles.', icon: <Message />, color: '#d32f2f', bg: '#ffebee' },
+  { type: 'CALLER_TUNE', label: 'Caller Tune', desc: 'Songs for your callers.', icon: <LibraryMusic />, color: '#0288d1', bg: '#e1f5fe' },
 ];
 
+// --- Sub-Component: Service Card (Fixed Layout) ---
+const ServiceCard = ({ config, isActive, isProcessing, onToggle }) => (
+  <Card 
+    elevation={isActive ? 4 : 1}
+    sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      borderRadius: 3,
+      border: isActive ? `2px solid ${config.color}` : '2px solid transparent',
+      transition: 'all 0.3s ease',
+      '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 }
+    }}
+  >
+    {/* 1. Content Area (Grows to fill space) */}
+    <Box sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <Avatar 
+        sx={{ 
+          width: 56, height: 56, mb: 2, 
+          bgcolor: isActive ? config.color : config.bg, 
+          color: isActive ? '#fff' : config.color 
+        }}
+      >
+        {config.icon}
+      </Avatar>
+      
+      <Typography variant="h6" fontWeight="bold" gutterBottom>
+        {config.label}
+      </Typography>
+      
+      <Typography variant="body2" color="text.secondary">
+        {config.desc}
+      </Typography>
+    </Box>
+
+    {/* 2. Action Footer (Fixed at bottom) */}
+    <Box 
+      sx={{ 
+        p: 2, 
+        bgcolor: isActive ? `${config.color}15` : '#f5f5f5', // Light tint when active, gray when inactive
+        display: 'flex', 
+        justifyContent: 'center',
+        borderTop: '1px solid',
+        borderColor: 'divider'
+      }}
+    >
+      {isProcessing ? (
+        <CircularProgress size={24} sx={{ color: config.color }} />
+      ) : (
+        <FormControlLabel
+          control={
+            <Switch 
+              checked={isActive} 
+              onChange={onToggle}
+              color="primary" // Uses theme primary color
+            />
+          }
+          label={
+            <Typography variant="body2" fontWeight="bold" sx={{ color: isActive ? config.color : 'text.secondary' }}>
+              {isActive ? 'Active' : 'Activate'}
+            </Typography>
+          }
+          sx={{ mr: 0 }} 
+        />
+      )}
+    </Box>
+  </Card>
+);
+
+// --- Main Component ---
 function ServiceManagement() {
   const { user } = useAuth();
   const [userServices, setUserServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [processingId, setProcessingId] = useState(null);
+  const [notification, setNotification] = useState({ open: false, msg: '', type: 'success' });
 
-  // Load user services on component mount
-  useEffect(() => {
-    if (user) {
-      loadServices();
-    }
-  }, [user]);
+  useEffect(() => { if (user) loadServices(); }, [user]);
 
   const loadServices = async () => {
     try {
-      setLoading(true);
       const data = await serviceService.getUserServices(user.id);
-      setUserServices(data);
-    } catch (error) {
-      console.error('Error loading services:', error);
-      showSnackbar('Failed to load services', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
-
-  const handleActivate = async (serviceType, serviceName) => {
-    const confirmActivate = window.confirm(
-      `Are you sure you want to activate ${serviceName}?`
-    );
-    
-    if (!confirmActivate) return;
-
-    setActionLoading(serviceType);
-    try {
-      await serviceService.activateService({
-        userId: user.id,
-        mobileNumber: user.mobileNumber,
-        serviceType: serviceType,
-        serviceName: serviceName,
-        serviceCode: `CODE_${serviceType}_${Date.now()}` // Auto-generated code
-      });
-      
-      showSnackbar(`${serviceName} activated successfully!`, 'success');
-      await loadServices(); // Refresh the services list
+      setUserServices(data || []);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || `Failed to activate ${serviceName}`;
-      showSnackbar(errorMessage, 'error');
-      console.error('Activation error:', err);
-    } finally {
-      setActionLoading(null);
-    }
+      console.error(err);
+      notify('Failed to load services', 'error');
+    } finally { setLoading(false); }
   };
 
-  const handleDeactivate = async (serviceId, serviceName) => {
-    const confirmDeactivate = window.confirm(
-      `Are you sure you want to deactivate ${serviceName}?`
-    );
-    
-    if (!confirmDeactivate) return;
+  const handleToggle = async (template) => {
+    const activeSvc = userServices.find(s => s.serviceType === template.type && s.status === 'ACTIVE');
+    const isActive = !!activeSvc;
+    setProcessingId(template.type);
 
-    setActionLoading(serviceId);
     try {
-      await serviceService.deactivateService(serviceId);
-      showSnackbar(`${serviceName} deactivated successfully!`, 'success');
-      await loadServices(); // Refresh the services list
+      if (isActive) {
+        await serviceService.deactivateService(activeSvc.id);
+        notify(`${template.label} deactivated`);
+      } else {
+        await serviceService.activateService({
+          userId: user.id,
+          mobileNumber: user.mobileNumber,
+          serviceType: template.type,
+          serviceName: template.label,
+          serviceCode: `CODE_${template.type}_${Date.now()}`
+        });
+        notify(`${template.label} activated`);
+      }
+      await loadServices();
     } catch (err) {
-      const errorMessage = err.response?.data?.message || `Failed to deactivate ${serviceName}`;
-      showSnackbar(errorMessage, 'error');
-      console.error('Deactivation error:', err);
-    } finally {
-      setActionLoading(null);
-    }
+      notify(err.response?.data?.message || 'Operation failed', 'error');
+    } finally { setProcessingId(null); }
   };
+
+  const notify = (msg, type = 'success') => setNotification({ open: true, msg, type });
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f4f6f8' }}>
       <Header />
-      
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
         <Grid container spacing={3}>
-          {/* Sidebar */}
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Sidebar />
           </Grid>
           
-          {/* Main Content */}
-          <Grid item xs={12} md={9}>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h4" gutterBottom fontWeight="600" color="primary.main">
-                Service Management
+          <Grid size={{ xs: 12, md: 9 }}>
+            {/* Page Title Banner */}
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 3, mb: 3, borderRadius: 2, 
+                background: 'linear-gradient(to right, #1565c0, #42a5f5)', 
+                color: '#fff' 
+              }}
+            >
+              <Typography variant="h5" fontWeight="bold">Service Management</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Manage your telecommunication subscriptions.
               </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Activate or deactivate your telecommunication services with a single click.
-              </Typography>
-            </Box>
+            </Paper>
 
             {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-                <CircularProgress size={60} />
-              </Box>
+              <Box display="flex" justifyContent="center" p={5}><CircularProgress /></Box>
             ) : (
               <Grid container spacing={3}>
-                {AVAILABLE_SERVICES.map((serviceTemplate) => {
-                  // Check if user already has this service active
-                  const activeInstance = userServices.find(
-                    us => us.serviceType === serviceTemplate.type && us.status === 'ACTIVE'
-                  );
-
-                  const isProcessing = actionLoading === serviceTemplate.type || 
-                                      (activeInstance && actionLoading === activeInstance.id);
-
+                {SERVICES_CONFIG.map((config) => {
+                  const isActive = userServices.some(s => s.serviceType === config.type && s.status === 'ACTIVE');
                   return (
-                    <Grid item xs={12} sm={6} md={4} key={serviceTemplate.type}>
-                      <Card 
-                        elevation={activeInstance ? 4 : 2}
-                        sx={{ 
-                          height: '100%', 
-                          display: 'flex', 
-                          flexDirection: 'column',
-                          border: activeInstance ? `3px solid ${serviceTemplate.color}` : '1px solid #e0e0e0',
-                          backgroundColor: activeInstance ? '#fafafa' : '#fff',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: 6
-                          }
-                        }}
-                      >
-                        <CardContent sx={{ flexGrow: 1, textAlign: 'center', pt: 3 }}>
-                          {/* Icon */}
-                          <Box 
-                            sx={{ 
-                              color: activeInstance ? serviceTemplate.color : 'text.secondary',
-                              mb: 2,
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center'
-                            }}
-                          >
-                            {serviceTemplate.icon}
-                          </Box>
-
-                          {/* Service Name */}
-                          <Typography variant="h6" component="div" fontWeight="600" gutterBottom>
-                            {serviceTemplate.label}
-                          </Typography>
-
-                          {/* Description */}
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: '48px' }}>
-                            {serviceTemplate.description}
-                          </Typography>
-
-                          {/* Status Chip */}
-                          {activeInstance ? (
-                            <Box sx={{ mt: 2 }}>
-                              <Chip 
-                                label="Active" 
-                                sx={{ 
-                                  backgroundColor: serviceTemplate.color,
-                                  color: '#fff',
-                                  fontWeight: '600',
-                                  mb: 1
-                                }} 
-                                size="small" 
-                              />
-                              {activeInstance.serviceName && (
-                                <Typography variant="caption" display="block" color="text.secondary">
-                                  {activeInstance.serviceName}
-                                </Typography>
-                              )}
-                            </Box>
-                          ) : (
-                            <Chip 
-                              label="Inactive" 
-                              variant="outlined" 
-                              size="small"
-                              sx={{ mt: 2 }}
-                            />
-                          )}
-                        </CardContent>
-                        
-                        {/* Action Button */}
-                        <CardActions sx={{ justifyContent: 'center', pb: 3, pt: 0 }}>
-                          {activeInstance ? (
-                            <Button 
-                              variant="outlined" 
-                              color="error"
-                              size="medium"
-                              fullWidth
-                              sx={{ mx: 2, fontWeight: '600' }}
-                              disabled={isProcessing}
-                              onClick={() => handleDeactivate(activeInstance.id, serviceTemplate.label)}
-                            >
-                              {isProcessing ? (
-                                <>
-                                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                                  Deactivating...
-                                </>
-                              ) : (
-                                'Deactivate'
-                              )}
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="contained" 
-                              size="medium"
-                              fullWidth
-                              sx={{ 
-                                mx: 2, 
-                                fontWeight: '600',
-                                backgroundColor: serviceTemplate.color,
-                                '&:hover': {
-                                  backgroundColor: serviceTemplate.color,
-                                  filter: 'brightness(0.9)'
-                                }
-                              }}
-                              disabled={isProcessing}
-                              onClick={() => handleActivate(serviceTemplate.type, serviceTemplate.label)}
-                            >
-                              {isProcessing ? (
-                                <>
-                                  <CircularProgress size={20} sx={{ mr: 1, color: '#fff' }} />
-                                  Activating...
-                                </>
-                              ) : (
-                                'Activate Now'
-                              )}
-                            </Button>
-                          )}
-                        </CardActions>
-                      </Card>
+                    <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={config.type}>
+                      <ServiceCard 
+                        config={config} 
+                        isActive={isActive} 
+                        isProcessing={processingId === config.type}
+                        onToggle={() => handleToggle(config)}
+                      />
                     </Grid>
                   );
                 })}
@@ -310,22 +184,9 @@ function ServiceManagement() {
           </Grid>
         </Grid>
       </Container>
-
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ width: '100%' }}
-          variant="filled"
-        >
-          {snackbar.message}
-        </Alert>
+      
+      <Snackbar open={notification.open} autoHideDuration={3000} onClose={() => setNotification({ ...notification, open: false })} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity={notification.type} variant="filled">{notification.msg}</Alert>
       </Snackbar>
     </Box>
   );

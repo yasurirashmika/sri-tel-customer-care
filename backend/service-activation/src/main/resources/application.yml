@@ -19,8 +19,13 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
     
+  # 👇 UPDATE THIS SECTION
   kafka:
     bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # This line fixes the ClassCastException by allowing Objects/Maps
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer 
 
 eureka:
   client:
