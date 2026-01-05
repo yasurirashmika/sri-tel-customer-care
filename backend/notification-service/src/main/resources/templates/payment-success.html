@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #28a745;
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        .success-icon {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .amount {
+            font-size: 36px;
+            color: #28a745;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .info-row {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">✓</div>
+            <h1>Payment Successful!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Dear <strong th:text="${customerName}">Customer</strong>,</p>
+            
+            <p>We have successfully received your payment.</p>
+            
+            <div class="amount">
+                LKR <span th:text="${amount}">0.00</span>
+            </div>
+            
+            <div class="info-row">
+                <span><strong>Transaction ID:</strong></span>
+                <span th:text="${transactionId}">TXN123456789</span>
+            </div>
+            
+            <div class="info-row">
+                <span><strong>Status:</strong></span>
+                <span style="color: #28a745;">Completed</span>
+            </div>
+            
+            <p>Your payment has been credited to your account. You can continue enjoying our services without interruption.</p>
+            
+            <p>Thank you for your payment!</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email. Please do not reply.</p>
+            <p>&copy; 2025 Sri Tel Ltd. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
