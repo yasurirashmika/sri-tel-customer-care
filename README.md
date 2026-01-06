@@ -311,31 +311,45 @@ npm run dev
 - `GET /api/services/user/{userId}` - Get user services
 
 ### 🤖 Chat Service (Port 8083)
-- Real-time WebSocket chat
-- AI-powered responses (Gemini API)
-- Keyword-based fallback simulation
-- Message persistence
+- **Real-time WebSocket chat with STOMP protocol** - Fully functional bidirectional communication
+- **AI-powered responses via Google Gemini API** - Intelligent customer support
+- **Keyword-based fallback simulation** - Works without API key
+- **Message persistence** - Complete chat history stored in database
+- **WebFlux for async API calls** - Non-blocking Gemini API integration
 - **Database**: `chat_db`
 
 **Key Endpoints**:
-- **WebSocket**: `ws://localhost:8083/ws`
-- **Subscribe**: `/topic/public`
-- **Send**: `/app/chat.sendMessage`
-- `GET /api/chat/history` - Get chat history
+- **WebSocket**: `ws://localhost:8083/ws` (SockJS + STOMP)
+  - **Subscribe**: `/topic/public` - Receive broadcast messages
+  - **Send**: `/app/chat.sendMessage` - Send messages
+- **REST**: `GET /api/chat/history` - Retrieve chat history
 
-**Chat Keywords** (Simulation Mode):
+**How Chat Works**:
+1. User sends message via WebSocket (`/app/chat.sendMessage`)
+2. Message saved to database
+3. If Gemini API is configured: AI generates intelligent response
+4. If API unavailable: Keyword-based fallback provides relevant answers
+5. Bot response broadcast to all connected clients via `/topic/public`
+
+**Simulation Mode Keywords** (when Gemini API not configured):
 - "bill", "payment" → Billing information
 - "data", "package" → Data plan details
 - "recharge" → Top-up instructions
 - "service", "activate" → Service activation help
 - "support", "help" → Contact information
 
+**Fully Implemented Features**:
+- ✅ **WebSocket Real-time Chat**: Fully operational with SockJS + STOMP
+- ✅ **Google Gemini AI Integration**: Advanced conversational AI responses
+- ✅ **Smart Fallback System**: Works seamlessly with or without API key
+- ✅ **Message Persistence**: All conversations stored in PostgreSQL
+- ✅ **Frontend Chat Widget**: Integrated in dashboard with typing indicators
+
 ### 🔔 Notification Service (Port 8086)
-- Email notifications via Gmail SMTP
-- In-app notifications displayed on dashboard
-- Real-time notification updates (polling every 5 seconds)
-- Event-driven notification system with Kafka
-- Notification history and management
+- **Email notifications via Gmail SMTP** - Fully functional automated emails
+- **In-app notifications displayed on dashboard** - Real-time updates via polling
+- **Event-driven notification system with Kafka** - Reactive architecture
+- **Notification history and management** - Complete audit trail
 - **Kafka Consumer**: Listens to billing and payment events
 - **Database**: `notification_db`
 
@@ -344,19 +358,21 @@ npm run dev
 - `GET /api/notifications/user/{userId}` - Get user notifications
 - `GET /api/notifications/user/{userId}/history` - Get notification history (paginated)
 - `GET /api/notifications/{id}` - Get notification by ID
-- **WebSocket**: `ws://localhost:8086/ws` (configured for future use)
+- **WebSocket**: `ws://localhost:8086/ws` (infrastructure ready, polling used for now)
 
 **Kafka Topics Consumed**:
 - `billing-events` - New bills generated, payment due reminders
 - `payment-events` - Payment confirmations and transaction updates
 
-**Implemented Features**:
+**Fully Implemented Features**:
 - ✅ **Email Notifications**: Fully functional via Gmail SMTP, sends emails for bills and payments
 - ✅ **In-App Notifications**: Stored in PostgreSQL database and displayed on user dashboard
 - ✅ **Notification Persistence**: Complete history tracking with timestamp and status
 - ✅ **Dashboard Integration**: Real-time notification display with 5-second polling
+- ✅ **Kafka Event Processing**: Automatically processes billing and payment events
+- ✅ **WebSocket Push Backend**: Fully implemented with SockJS + STOMP, sends notifications via WebSocket
+- ⚠️ **Frontend WebSocket Connection**: Backend ready, frontend currently uses HTTP polling (easy to connect)
 - ⚠️ **SMS Notifications**: Placeholder code only, not integrated with actual SMS provider
-- ⚠️ **WebSocket Push**: Basic configuration present but not actively sending push notifications
 
 ## 🗃️ Database Schema Highlights
 
@@ -392,7 +408,7 @@ CREATE TABLE chat_messages (
 ### Test User Credentials
 ```json
 {
-  "username": "dhsjlkz",
+  "username": "test",
   "password": "test123",
   "mobileNumber": "0774810840"
 }
