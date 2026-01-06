@@ -92,25 +92,52 @@ const ServiceCard = ({ config, isActive, isProcessing, onToggle }) => (
 
 // --- Main Component ---
 function ServiceManagement() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [userServices, setUserServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [notification, setNotification] = useState({ open: false, msg: '', type: 'success' });
 
-  useEffect(() => { if (user) loadServices(); }, [user]);
+  useEffect(() => { 
+    if (authLoading) {
+      // Still loading auth, wait
+      return;
+    }
+    
+    if (user?.id) {
+      console.log('Loading services for user:', user.id);
+      loadServices();
+    } else {
+      console.warn('No user found after auth loaded');
+      setLoading(false);
+    }
+  }, [user?.id, authLoading]);
 
   const loadServices = async () => {
+    if (!user?.id) {
+      console.warn('Cannot load services: User not found');
+      setLoading(false);
+      return;
+    }
+    
     try {
+      console.log('Fetching services...');
       const data = await serviceService.getUserServices(user.id);
+      console.log('Services loaded:', data);
       setUserServices(data || []);
     } catch (err) {
-      console.error(err);
+      console.error('Error loading services:', err);
+      console.error('Error details:', err.response?.data || err.message);
       notify('Failed to load services', 'error');
     } finally { setLoading(false); }
   };
 
   const handleToggle = async (template) => {
+    if (!user?.id) {
+      notify('User not found. Please login again.', 'error');
+      return;
+    }
+    
     const activeSvc = userServices.find(s => s.serviceType === template.type && s.status === 'ACTIVE');
     const isActive = !!activeSvc;
     setProcessingId(template.type);
