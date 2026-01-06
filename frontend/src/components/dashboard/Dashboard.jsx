@@ -233,7 +233,9 @@ const Dashboard = () => {
                 Sri-Care is your one-stop portal. You can view your latest bills and manage services. 
                 Our support is available 24/7.
               </Typography>
-              <Button variant="text" onClick={() => navigate('/chat')} sx={{ p: 0 }}>Start a Chat &rarr;</Button>
+              <Typography variant="body2" color="primary" sx={{ fontWeight: 500 }}>
+                💬 Click the chat icon at the bottom-right corner to start chatting!
+              </Typography>
             </Paper>
 
           </Grid>

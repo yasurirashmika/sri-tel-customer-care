@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Login from './components/auth/Login.jsx';
 import Register from './components/auth/Register.jsx';
@@ -12,29 +12,31 @@ import Payment from './components/Payment/PaymentForm.jsx';
 import Notifications from './components/notification/Notification.jsx';
 
 function App() {
-  // 2. Get the current user status
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<h1>Sri-Tel Customer Care</h1>} />
+        {/* Redirect root path to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* App Pages */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/notifications" element={<Notifications />} />
-        
-        {/* Protected Routes (Optional: You can wrap these in a ProtectedRoute component later) */}
         <Route path="/bills" element={<BillList />} />
         <Route path="/bills/:billId" element={<BillDetails />} />
         <Route path="/services" element={<ServiceManagement />} />
         <Route path="/payment/:billId" element={<Payment />} />
-        <Route path="*" element={<h1>404 Not Found</h1>} />
+
+        {/* Catch-all → login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
-      
-      {/* 3. Only show ChatWidget if user is logged in */}
+
+      {/* Show chat only when logged in */}
       {user && <ChatWidget />}
-      
     </Router>
   );
 }
