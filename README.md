@@ -589,22 +589,6 @@ x] Apache Kafka for event streaming (✅ Implemented)
 - [ ] Kafka Streams for real-time analytics
 ---
 
-## 👥 Team
-
-- **Project Lead**: CSC4222 Service Oriented Computing
-- **Institution**: University of Colombo School of Computing
-- **Semester**: 4, Level 2
-
----
-
-## 📞 Support
-
-For issues and questions:
-- 📧 Email: support@sritel.lk
-- 💬 Chat: Use the AI chat widget in the application
-- 🐛 Issues: [GitHub Issues](https://github.com/your-username/sri-tel-customer-care/issues)
-
----
 
 ## 🎯 Future Enhancements
 
@@ -613,7 +597,6 @@ For issues and questions:
 - [ ] Redis caching layer
 - [x] Apache Kafka message broker (Implemented)
 - [ ] RabbitMQ message broker (alternative/additional)
-- [ ] Kafka Streams for real-time analytics
 - [ ] Prometheus + Grafana monitoring
 - [ ] ELK Stack for logging
 - [ ] Mobile application (React Native)
