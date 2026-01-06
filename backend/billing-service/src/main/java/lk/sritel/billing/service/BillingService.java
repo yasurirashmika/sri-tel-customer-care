@@ -5,11 +5,13 @@ import lk.sritel.billing.dto.BillResponse;
 import lk.sritel.billing.model.*;
 import lk.sritel.billing.repository.BillRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BillingService {
     
     private final BillRepository billRepository;
@@ -59,13 +62,12 @@ public class BillingService {
     
     @Transactional
     public BillResponse generateBill(Long userId) {
-        // Generate bill number
         String billNumber = "BILL-" + System.currentTimeMillis();
         
-        // Create bill with sample data
+        // 1. Create bill entity
         Bill bill = Bill.builder()
                 .userId(userId)
-                .mobileNumber("0771234567") // In production, fetch from user service
+                .mobileNumber("0771234567") // Fallback mobile
                 .billNumber(billNumber)
                 .billingPeriod(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM yyyy")))
                 .billDate(LocalDateTime.now())
@@ -73,50 +75,16 @@ public class BillingService {
                 .totalAmount(BigDecimal.ZERO)
                 .paidAmount(BigDecimal.ZERO)
                 .status(BillStatus.UNPAID)
+                .items(new ArrayList<>()) // Initialize list
                 .build();
-        
-        // ---------------------------------------------------------
-        // ✅ FIX: Initialize the items list to prevent NullPointerException
-        // ---------------------------------------------------------
-        bill.setItems(new ArrayList<>()); 
 
-        // Add sample bill items
-        BillItem voiceCharges = BillItem.builder()
-                .bill(bill)
-                .description("Voice calls")
-                .chargeType(ChargeType.VOICE_CALLS)
-                .amount(new BigDecimal("450.00"))
-                .quantity(120)
-                .build();
+        // 2. Add sample bill items
+        bill.getItems().add(BillItem.builder().bill(bill).description("Voice calls").chargeType(ChargeType.VOICE_CALLS).amount(new BigDecimal("450.00")).quantity(120).build());
+        bill.getItems().add(BillItem.builder().bill(bill).description("Data usage (5GB)").chargeType(ChargeType.DATA_USAGE).amount(new BigDecimal("850.00")).quantity(5).build());
+        bill.getItems().add(BillItem.builder().bill(bill).description("SMS").chargeType(ChargeType.SMS).amount(new BigDecimal("100.00")).quantity(50).build());
+        bill.getItems().add(BillItem.builder().bill(bill).description("Monthly subscription").chargeType(ChargeType.SUBSCRIPTION).amount(new BigDecimal("500.00")).quantity(1).build());
         
-        BillItem dataCharges = BillItem.builder()
-                .bill(bill)
-                .description("Data usage (5GB)")
-                .chargeType(ChargeType.DATA_USAGE)
-                .amount(new BigDecimal("850.00"))
-                .quantity(5)
-                .build();
-        
-        BillItem smsCharges = BillItem.builder()
-                .bill(bill)
-                .description("SMS")
-                .chargeType(ChargeType.SMS)
-                .amount(new BigDecimal("100.00"))
-                .quantity(50)
-                .build();
-        
-        BillItem subscription = BillItem.builder()
-                .bill(bill)
-                .description("Monthly subscription")
-                .chargeType(ChargeType.SUBSCRIPTION)
-                .amount(new BigDecimal("500.00"))
-                .quantity(1)
-                .build();
-        
-        // Now this line is safe because items list is initialized
-        bill.getItems().addAll(Arrays.asList(voiceCharges, dataCharges, smsCharges, subscription));
-        
-        // Calculate total
+        // 3. Calculate total and save
         BigDecimal total = bill.getItems().stream()
                 .map(BillItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -124,19 +92,41 @@ public class BillingService {
         
         bill = billRepository.save(bill);
         
-        // Publish bill generated event
+        // 4. Fetch Registered User Email from User-Service
+        String phoneNumber = bill.getMobileNumber();
+        String registeredEmail = "customer@sritel.lk"; // Fallback email
+        
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            // Assuming your User Service is on port 8080 (Gateway)
+            String userUrl = "http://localhost:8080/api/users/" + userId;
+            Map<String, Object> userResponse = restTemplate.getForObject(userUrl, Map.class);
+            
+            if (userResponse != null) {
+                if (userResponse.get("email") != null) registeredEmail = userResponse.get("email").toString();
+                if (userResponse.get("mobileNumber") != null) phoneNumber = userResponse.get("mobileNumber").toString();
+            }
+        } catch (Exception ex) {
+            log.warn("Could not fetch user info for ID {}: {}. Using fallback details.", userId, ex.getMessage());
+        }
+        
+        // 5. Publish Event to Kafka
         Map<String, Object> event = new HashMap<>();
         event.put("eventType", "BILL_GENERATED");
-        event.put("billId", bill.getId());
-        event.put("userId", bill.getUserId());
-        event.put("mobileNumber", bill.getMobileNumber());
+        event.put("billId", String.valueOf(bill.getId()));
+        event.put("userId", String.valueOf(bill.getUserId()));
+        event.put("phoneNumber", phoneNumber);
+        event.put("email", registeredEmail); // SENT TO KAFKA
         event.put("billNumber", bill.getBillNumber());
-        event.put("amount", bill.getTotalAmount());
+        event.put("amount", bill.getTotalAmount().doubleValue());
         event.put("dueDate", bill.getDueDate().toString());
+        event.put("billingPeriod", bill.getBillingPeriod());
         event.put("timestamp", System.currentTimeMillis());
         
-        kafkaTemplate.send("bill-events", event);
+        kafkaTemplate.send("billing-events", event);
         kafkaTemplate.send("notification-events", event);
+        
+        log.info("Bill generated and events published for User: {} ({})", userId, registeredEmail);
         
         return mapToResponse(bill);
     }
@@ -144,11 +134,9 @@ public class BillingService {
     @KafkaListener(topics = "payment-events", groupId = "billing-service")
     public void handlePaymentEvent(Map<String, Object> event) {
         String eventType = (String) event.get("eventType");
-        
         if ("PAYMENT_COMPLETED".equals(eventType)) {
             Long billId = Long.valueOf(event.get("billId").toString());
             BigDecimal paidAmount = new BigDecimal(event.get("amount").toString());
-            
             updateBillPaymentStatus(billId, paidAmount);
         }
     }
@@ -165,18 +153,14 @@ public class BillingService {
         } else if (bill.getPaidAmount().compareTo(BigDecimal.ZERO) > 0) {
             bill.setStatus(BillStatus.PARTIALLY_PAID);
         }
-        
         billRepository.save(bill);
     }
     
-    // Scheduled task to generate monthly bills (runs on 1st of every month)
     @Scheduled(cron = "0 0 0 1 * ?")
     public void generateMonthlyBills() {
-        // In production, fetch all active users and generate bills
-        System.out.println("Generating monthly bills...");
+        log.info("Starting scheduled monthly billing task...");
     }
     
-    // Scheduled task to check overdue bills (runs daily)
     @Scheduled(cron = "0 0 8 * * ?")
     public void checkOverdueBills() {
         List<Bill> unpaidBills = billRepository.findByStatus(BillStatus.UNPAID);
@@ -187,24 +171,18 @@ public class BillingService {
                 bill.setStatus(BillStatus.OVERDUE);
                 billRepository.save(bill);
                 
-                // Send overdue notification
                 Map<String, Object> event = new HashMap<>();
                 event.put("eventType", "BILL_OVERDUE");
                 event.put("billId", bill.getId());
                 event.put("userId", bill.getUserId());
-                event.put("mobileNumber", bill.getMobileNumber());
                 event.put("amount", bill.getTotalAmount());
-                event.put("timestamp", System.currentTimeMillis());
-                
                 kafkaTemplate.send("notification-events", event);
             }
         }
     }
     
     private BillResponse mapToResponse(Bill bill) {
-        // Safety check for null items in response mapping as well
         List<BillItem> items = bill.getItems() != null ? bill.getItems() : new ArrayList<>();
-
         List<BillItemDto> itemDtos = items.stream()
                 .map(item -> BillItemDto.builder()
                         .id(item.getId())

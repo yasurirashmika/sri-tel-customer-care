@@ -204,13 +204,22 @@ export const chatService = {
 };
 
 // ==================== NOTIFICATION SERVICE (Optional) ====================
+// Change this in your api.js
+// ==================== NOTIFICATION SERVICE ====================
 export const notificationService = {
   getUserNotifications: async (userId) => {
     try {
-      const response = await api.get(`/api/notifications/users/${userId}`);
-      return { available: true, data: response.data };
+      // 1. Call the backend (returns a raw array)
+      const response = await api.get(`/api/notifications/user/${userId}`);
+      
+      // 2. Wrap it so the Dashboard.jsx can read it correctly
+      // We check if response.data IS the array itself
+      return { 
+        available: true, 
+        data: Array.isArray(response.data) ? response.data : [] 
+      };
     } catch (error) {
-      console.warn('Notification service unavailable:', error?.response?.status || error.message);
+      console.error('Notification API Error:', error);
       return { available: false, data: [] };
     }
   },

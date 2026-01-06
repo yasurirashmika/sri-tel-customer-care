@@ -9,6 +9,7 @@ import BillDetails from './components/Billing/BillDetails';
 import ChatWidget from './components/Chat/ChatWidget.jsx';
 import ServiceManagement from './components/Services/ServiceManagement.jsx';
 import Payment from './components/Payment/PaymentForm.jsx';
+import Notifications from './components/notification/Notification.jsx';
 
 function App() {
   // 2. Get the current user status
@@ -21,6 +22,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/notifications" element={<Notifications />} />
         
         {/* Protected Routes (Optional: You can wrap these in a ProtectedRoute component later) */}
         <Route path="/bills" element={<BillList />} />
