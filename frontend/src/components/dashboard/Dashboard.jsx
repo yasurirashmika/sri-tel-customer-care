@@ -201,13 +201,9 @@ const Dashboard = () => {
                 and manage your add-on services directly from here. If you face any connectivity issues, 
                 our AI-powered Chat Support is available 24/7.
               </Typography>
-              <Button 
-                variant="text" 
-                onClick={() => navigate('/chat')}
-                sx={{ p: 0 }}
-              >
-                Start a Chat &rarr;
-              </Button>
+              <Typography variant="body2" color="primary" sx={{ fontWeight: 500 }}>
+                💬 Click the chat icon at the bottom-right corner to start chatting!
+              </Typography>
             </Paper>
 
           </Grid>
