@@ -18,24 +18,51 @@ import Sidebar from '../Layout/Sidebar';
 import billingService from '../../services/billingService';
 
 function BillList() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => { if (user) loadBills(); }, [user]);
+  useEffect(() => { 
+    if (authLoading) {
+      // Still loading auth, wait
+      return;
+    }
+    
+    if (user?.id) {
+      console.log('Loading bills for user:', user.id);
+      loadBills();
+    } else {
+      console.warn('No user found after auth loaded');
+      setLoading(false);
+    }
+  }, [user?.id, authLoading]);
 
   const loadBills = async () => {
+    if (!user?.id) {
+      console.warn('Cannot load bills: User not found');
+      setLoading(false);
+      return;
+    }
+    
     try {
+      console.log('Fetching bills...');
       const data = await billingService.getUserBills(user.id);
+      console.log('Bills loaded:', data);
       setBills(data || []);
     } catch (error) {
       console.error('Error loading bills:', error);
+      console.error('Error details:', error.response?.data || error.message);
     } finally { setLoading(false); }
   };
 
   const handleGenerateBill = async () => {
+    if (!user?.id) {
+      console.error('Cannot generate bill: User not found');
+      return;
+    }
+    
     setGenerating(true);
     try {
       await billingService.generateBill(user.id);
