@@ -12,7 +12,7 @@ A comprehensive microservices-based customer care system for telecommunications,
 - 💰 **Payment Processing** - Multiple payment methods with instant confirmation
 - 📞 **Service Activation** - Manage voice, data, SMS packages, roaming, and more
 - 🤖 **AI Chat Support** - 24/7 intelligent customer support powered by Google Gemini API
-- 🔔 **Notifications** - Real-time alerts for bills, payments, and service updates
+- 🔔 **Notifications** - Email notifications and in-app dashboard alerts for bills and payments
 - 📊 **Dashboard** - Comprehensive overview of account status and activities
 
 ### Technical Features
@@ -37,20 +37,20 @@ A comprehensive microservices-based customer care system for telecommunications,
 │                    (Port: 8080)                             │
 └─────────────────┬───────────────────────────────────────────┘
                   │
-    ┌─────────────┼─────────────┬─────────────┬──────────────┐
-    │             │             │             │              │
-┌───▼───┐   ┌─────▼────┐   ┌────▼────┐   ┌───▼────┐   ┌────▼────┐
-│ User  │   │ Billing  │   │ Payment │   │Service │   │  Chat   │
-│Service│   │ Service  │   │ Service │   │Activation   │ Service │
-│:8081  │   │  :8082   │   │  :8084  │   │  :8085 │   │  :8083  │
-└───┬───┘   └─────┬────┘   └────┬────┘   └───┬────┘   └────┬────┘
-    │             │              │            │              │
-    └─────────────┴──────────────┴────────────┴──────────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │ Service Registry   │
-                    │  (Eureka: 8761)    │
-                    └────────────────────┘
+    ┌─────────────┼─────────────┬─────────────┬──────────────┬──────────────┐
+    │             │             │             │              │              │
+┌───▼───┐   ┌─────▼────┐   ┌────▼────┐   ┌───▼────┐   ┌────▼────┐   ┌────▼─────┐
+│ User  │   │ Billing  │   │ Payment │   │Service │   │  Chat   │   │Notification
+│Service│   │ Service  │   │ Service │   │Activation   │ Service │   │ Service  │
+│:8081  │   │  :8082   │   │  :8084  │   │  :8085 │   │  :8083  │   │  :8086   │
+└───┬───┘   └─────┬────┘   └────┬────┘   └───┬────┘   └────┬────┘   └────┬─────┘
+    │             │              │            │              │              │
+    └─────────────┴──────────────┴────────────┴──────────────┴──────────────┘
+                              │                               │
+                    ┌─────────▼──────────┐        ┌──────────▼───────────┐
+                    │ Service Registry   │        │    Apache Kafka      │
+                    │  (Eureka: 8761)    │        │   (Port: 9092)       │
+                    └────────────────────┘        └──────────────────────┘
 ```
 
 ### Database Schema
@@ -59,7 +59,7 @@ A comprehensive microservices-based customer care system for telecommunications,
 - **Payment Service** → `paymentdb` (Transactions, Payment Methods)
 - **Service Activation** → `servicedb` (Subscriptions, Services)
 - **Chat Service** → `chat_db` (Messages, Sessions)
-- **Notification Service** → `notificationdb` (Notifications)
+- **Notification Service** → `notification_db` (Notifications, Email logs)
 
 ---
 
@@ -98,7 +98,7 @@ A comprehensive microservices-based customer care system for telecommunications,
 
 - **Java Development Kit (JDK) 21+**
 - **Maven 3.6+**
-- **Apache Kafka 2.13+** (with ZooKeeper)
+- **Apache Kafka 2.13-4.1.1+** (KRaft mode)
 - **Node.js 18+ and npm**
 - **PostgreSQL 12+**
 - **Google Gemini API Key** (optional, falls back to simulation mode)
@@ -124,7 +124,7 @@ CREATE DATABASE billingdb;
 CREATE DATABASE paymentdb;
 CREATE DATABASE servicedb;
 CREATE DATABASE chat_db;
-CREATE DATABASE notificationdb;
+CREATE DATABASE notification_db;
 ```
 
 ### 3. Backend Configuration
@@ -157,29 +157,50 @@ gemini:
 
 Get your API key from: https://aistudio.google.com/app/apikey
 
-### 5. Frontend Configuration
+### 5. Email Configuration (For Notifications)
+
+For the Notification Service to send emails, configure Gmail SMTP:
+
+**File**: `backend/notification-service/src/main/resources/application.yml`
+```yaml
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-specific-password  # Use Gmail App Password, not regular password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+```
+
+**To get Gmail App Password:**
+1. Go to Google Account → Security
+2. Enable 2-Step Verification
+3. Generate App Password for "Mail"
+4. Use that 16-character password in the configuration
+
+### 6. Frontend Configuration
 
 The frontend is pre-configured to connect to `http://localhost:8080` (API Gateway).
 
 ---
-0: Start Apache Kafka
 
-**Start ZooKeeper:**
+## ▶️ Running the Application
+
+### Step 0: Start Apache Kafka
+
+This project uses Kafka in **KRaft mode** (no ZooKeeper required):
+
 ```bash
 cd D:\Softwares\kafka_2.13-4.1.1
-.\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
-```
-
-**Start Kafka Server (in a new terminal):**
-```bash
-cd D:\Softwares\kafka_2.13-4.1.1
-.\bin\windows\kafka-server-start.bat .\config\server.properties
+bin\windows\kafka-server-start.bat config\server.properties
 ```
 
 **Kafka runs on**: `localhost:9092`
-
-### Step 
-## ▶️ Running the Application
 
 ### Step 1: Start Service Registry (Eureka)
 
@@ -225,20 +246,10 @@ mvn spring-boot:run
 # Service Activation (Port 8085)
 cd backend/service-activation
 mvn spring-boot:run
-```
-Kafka Producer**: Publishes user events (registration, login)
-- **Database**: `userdb`
 
-**Key Endpoints**:
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `GET /api/users/{id}` - Get user details
-
-**Kafka Topics**:
-- `user-events` - General user events
-- `user-registration` - New user registrations
-- `user-login` - User login event
-npm run dev
+# Notification Service (Port 8086)
+cd backend/notification-service
+mvn spring-boot:run
 ```
 
 **Frontend runs on**: http://localhost:5173
@@ -251,6 +262,14 @@ npm run dev
 - User registration and authentication
 - Profile management
 - JWT token generation and validation
+### Step 4: Start Frontend
+
+```bash
+cd frontend
+npm install  # Run this only once
+npm run dev
+```
+
 - **Database**: `userdb`
 
 **Key Endpoints**:
@@ -312,12 +331,32 @@ npm run dev
 - "support", "help" → Contact information
 
 ### 🔔 Notification Service (Port 8086)
-- Real-time notifications
-- Notification history
-- Mark as read/unread
-- **Database**: `notificationdb`
+- Email notifications via Gmail SMTP
+- In-app notifications displayed on dashboard
+- Real-time notification updates (polling every 5 seconds)
+- Event-driven notification system with Kafka
+- Notification history and management
+- **Kafka Consumer**: Listens to billing and payment events
+- **Database**: `notification_db`
 
----
+**Key Endpoints**:
+- `POST /api/notifications` - Send notification
+- `GET /api/notifications/user/{userId}` - Get user notifications
+- `GET /api/notifications/user/{userId}/history` - Get notification history (paginated)
+- `GET /api/notifications/{id}` - Get notification by ID
+- **WebSocket**: `ws://localhost:8086/ws` (configured for future use)
+
+**Kafka Topics Consumed**:
+- `billing-events` - New bills generated, payment due reminders
+- `payment-events` - Payment confirmations and transaction updates
+
+**Implemented Features**:
+- ✅ **Email Notifications**: Fully functional via Gmail SMTP, sends emails for bills and payments
+- ✅ **In-App Notifications**: Stored in PostgreSQL database and displayed on user dashboard
+- ✅ **Notification Persistence**: Complete history tracking with timestamp and status
+- ✅ **Dashboard Integration**: Real-time notification display with 5-second polling
+- ⚠️ **SMS Notifications**: Placeholder code only, not integrated with actual SMS provider
+- ⚠️ **WebSocket Push**: Basic configuration present but not actively sending push notifications
 
 ## 🗃️ Database Schema Highlights
 
@@ -460,6 +499,21 @@ mvn spring-boot:run
 - Check internet connection
 - Enable simulation mode as fallback in `application.yml`
 
+### Issue: Email notifications not sending
+**Solution**: 
+1. Check Gmail SMTP configuration in `notification-service/application.yml`
+2. Ensure you're using Gmail App Password (not regular password)
+3. Verify 2-Step Verification is enabled on Google Account
+4. Check email credentials are correct
+5. Review notification-service logs for SMTP errors
+
+### Issue: Notifications not showing on dashboard
+**Solution**: 
+1. Verify notification-service is running on port 8086
+2. Check `notification_db` database exists
+3. Ensure Kafka is running and notification-service is consuming events
+4. Check browser console for API errors
+
 ---
 
 ## 📂 Project Structure
@@ -484,6 +538,35 @@ sri-tel-customer-care/
 │   └── package.json
 └── README.md
 ```
+
+---
+
+## 📬 How Notifications Work
+
+The notification system follows an event-driven architecture using Apache Kafka:
+
+### Flow:
+1. **Event Generation**: When a bill is generated or payment is processed, the respective service publishes an event to Kafka
+2. **Kafka Topics**: Events are published to `billing-events` or `payment-events` topics
+3. **Notification Service**: Listens to these Kafka topics and consumes the events
+4. **Processing**: 
+   - Creates a notification record in `notification_db`
+   - Sends email via Gmail SMTP (if enabled)
+   - Stores notification for dashboard display
+5. **Dashboard Display**: Frontend polls the notification API every 5 seconds to fetch new notifications
+
+### Example Flow (Bill Generated):
+```
+Billing Service → Kafka (billing-events) → Notification Service → Email + Database → Dashboard
+```
+
+### What's Implemented:
+- ✅ Kafka event-driven architecture
+- ✅ Email notifications (Gmail SMTP)
+- ✅ Database persistence
+- ✅ Dashboard display with real-time polling
+- ❌ SMS notifications (placeholder only)
+- ❌ Real-time WebSocket push (configured but not used)
 
 ---
 
