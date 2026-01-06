@@ -12,7 +12,11 @@ import Payment from './components/Payment/PaymentForm.jsx';
 import Notifications from './components/notification/Notification.jsx';
 
 function App() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
 
   return (
     <Router>

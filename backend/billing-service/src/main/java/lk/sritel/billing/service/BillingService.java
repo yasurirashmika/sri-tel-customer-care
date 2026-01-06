@@ -78,13 +78,42 @@ public class BillingService {
                 .items(new ArrayList<>()) // Initialize list
                 .build();
 
-        // 2. Add sample bill items
-        bill.getItems().add(BillItem.builder().bill(bill).description("Voice calls").chargeType(ChargeType.VOICE_CALLS).amount(new BigDecimal("450.00")).quantity(120).build());
-        bill.getItems().add(BillItem.builder().bill(bill).description("Data usage (5GB)").chargeType(ChargeType.DATA_USAGE).amount(new BigDecimal("850.00")).quantity(5).build());
-        bill.getItems().add(BillItem.builder().bill(bill).description("SMS").chargeType(ChargeType.SMS).amount(new BigDecimal("100.00")).quantity(50).build());
-        bill.getItems().add(BillItem.builder().bill(bill).description("Monthly subscription").chargeType(ChargeType.SUBSCRIPTION).amount(new BigDecimal("500.00")).quantity(1).build());
+        // 2. Fetch active services from Service Activation microservice
+        List<Map<String, Object>> activeServices = fetchUserActiveServices(userId);
         
-        // 3. Calculate total and save
+        // Add base subscription fee
+        bill.getItems().add(BillItem.builder()
+                .bill(bill)
+                .description("Base Monthly Subscription")
+                .chargeType(ChargeType.SUBSCRIPTION)
+                .amount(new BigDecimal("200.00"))
+                .quantity(1)
+                .build());
+        
+        // 3. Add bill items based on active services
+        if (activeServices != null && !activeServices.isEmpty()) {
+            for (Map<String, Object> service : activeServices) {
+                String serviceType = (String) service.get("serviceType");
+                String serviceName = (String) service.get("serviceName");
+                BigDecimal serviceCharge = getServiceCharge(serviceType);
+                ChargeType chargeType = mapServiceTypeToChargeType(serviceType);
+                
+                if (serviceCharge.compareTo(BigDecimal.ZERO) > 0) {
+                    bill.getItems().add(BillItem.builder()
+                            .bill(bill)
+                            .description(serviceName != null ? serviceName : serviceType)
+                            .chargeType(chargeType)
+                            .amount(serviceCharge)
+                            .quantity(1)
+                            .build());
+                }
+            }
+        } else {
+            // No active services - only base subscription
+            log.info("No active services found for user {}. Billing base subscription only.", userId);
+        }
+        
+        // 4. Calculate total and save
         BigDecimal total = bill.getItems().stream()
                 .map(BillItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -129,6 +158,54 @@ public class BillingService {
         log.info("Bill generated and events published for User: {} ({})", userId, registeredEmail);
         
         return mapToResponse(bill);
+    }
+    
+    // Fetch active services from Service Activation microservice
+    private List<Map<String, Object>> fetchUserActiveServices(Long userId) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String serviceUrl = "http://localhost:8080/api/services/user/" + userId + "/active";
+            
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> services = restTemplate.getForObject(serviceUrl, List.class);
+            
+            log.info("Fetched {} active services for user {}", 
+                    services != null ? services.size() : 0, userId);
+            return services;
+        } catch (Exception ex) {
+            log.warn("Could not fetch active services for user {}: {}. Using base subscription only.", 
+                    userId, ex.getMessage());
+            return new ArrayList<>();
+        }
+    }
+    
+    // Get monthly charge for each service type
+    private BigDecimal getServiceCharge(String serviceType) {
+        return switch (serviceType) {
+            case "DATA_PACKAGE" -> new BigDecimal("500.00");
+            case "VOICE_PACKAGE" -> new BigDecimal("300.00");
+            case "SMS_PACKAGE" -> new BigDecimal("150.00");
+            case "INTERNATIONAL_ROAMING" -> new BigDecimal("2000.00");
+            case "RING_TONE" -> new BigDecimal("50.00");
+            case "CALLER_TUNE" -> new BigDecimal("75.00");
+            case "VAS_OTHER" -> new BigDecimal("100.00");
+            default -> {
+                log.warn("Unknown service type: {}. Using default charge.", serviceType);
+                yield new BigDecimal("100.00");
+            }
+        };
+    }
+    
+    // Map service type to charge type
+    private ChargeType mapServiceTypeToChargeType(String serviceType) {
+        return switch (serviceType) {
+            case "DATA_PACKAGE" -> ChargeType.DATA_USAGE;
+            case "VOICE_PACKAGE" -> ChargeType.VOICE_CALLS;
+            case "SMS_PACKAGE" -> ChargeType.SMS;
+            case "INTERNATIONAL_ROAMING" -> ChargeType.ROAMING;
+            case "RING_TONE", "CALLER_TUNE", "VAS_OTHER" -> ChargeType.VAS_SERVICE;
+            default -> ChargeType.OTHER;
+        };
     }
     
     @KafkaListener(topics = "payment-events", groupId = "billing-service")

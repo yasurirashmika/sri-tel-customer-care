@@ -13,11 +13,11 @@ spring:
     bootstrap-servers: localhost:9092
 
   datasource:
-    url: jdbc:postgresql://localhost:5400/billing_db
+    url: jdbc:postgresql://localhost:5432/billing_db
     username: postgres
     # If you use application-local.yml, this value is a fallback. 
     # If not, keep your hardcoded password here.
-    password: kavi
+    password: Yasuri@123
     driver-class-name: org.postgresql.Driver
   
   jpa:
