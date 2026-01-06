@@ -28,11 +28,6 @@ function Sidebar() {
       icon: <SettingsIcon />, 
       path: '/services' 
     },
-    { 
-      text: 'Chat Support', 
-      icon: <ChatIcon />, 
-      path: '/chat' 
-    },
   ];
 
   return (
