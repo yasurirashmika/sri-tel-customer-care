@@ -560,15 +560,7 @@ The notification system follows an event-driven architecture using Apache Kafka:
 Billing Service → Kafka (billing-events) → Notification Service → Email + Database → Dashboard
 ```
 
-### What's Implemented:
-- ✅ Kafka event-driven architecture
-- ✅ Email notifications (Gmail SMTP)
-- ✅ Database persistence
-- ✅ Dashboard display with real-time polling
-- ❌ SMS notifications (placeholder only)
-- ❌ Real-time WebSocket push (configured but not used)
 
----
 
 ## 🎯 Future Enhancements
 
