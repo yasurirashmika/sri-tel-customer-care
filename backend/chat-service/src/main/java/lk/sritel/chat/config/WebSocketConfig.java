@@ -9,17 +9,24 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-
+    
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
+        // Enable a simple in-memory message broker to send messages to clients
+        // Clients subscribe to destinations prefixed with /topic
         config.enableSimpleBroker("/topic");
+        
+        // Messages sent from clients will be routed to @MessageMapping methods
+        // with the /app prefix
         config.setApplicationDestinationPrefixes("/app");
     }
-
+    
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Register the /ws endpoint for WebSocket connections
+        // Enable SockJS fallback options
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000")
-                .withSockJS();
+                .setAllowedOriginPatterns("*")  // Allow all origins (adjust for production)
+                .withSockJS();  // Enable SockJS fallback
     }
 }
