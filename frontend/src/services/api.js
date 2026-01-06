@@ -86,4 +86,143 @@ export const userService = {
   },
 };
 
+// ==================== BILLING SERVICE ====================
+export const billingService = {
+  getUserBills: async (userId) => {
+    const response = await api.get(`/api/bills/user/${userId}`);
+    return response.data;
+  },
+
+  getBillById: async (billId) => {
+    const response = await api.get(`/api/bills/${billId}`);
+    return response.data;
+  },
+
+  getBillByNumber: async (billNumber) => {
+    const response = await api.get(`/api/bills/number/${billNumber}`);
+    return response.data;
+  },
+
+  getUnpaidBills: async (userId) => {
+    const response = await api.get(`/api/bills/user/${userId}/unpaid`);
+    return response.data;
+  },
+
+  generateBill: async (userId) => {
+    const response = await api.post(`/api/bills/generate/${userId}`);
+    return response.data;
+  },
+
+  getBillsByMobile: async (mobileNumber) => {
+    const response = await api.get(`/api/bills/mobile/${mobileNumber}`);
+    return response.data;
+  },
+};
+
+// ==================== PAYMENT SERVICE ====================
+export const paymentService = {
+  processPayment: async (paymentData) => {
+    const response = await api.post('/api/payments/process', paymentData);
+    return response.data;
+  },
+
+  getUserPayments: async (userId) => {
+    const response = await api.get(`/api/payments/user/${userId}`);
+    return response.data;
+  },
+
+  getPaymentById: async (paymentId) => {
+    const response = await api.get(`/api/payments/${paymentId}`);
+    return response.data;
+  },
+
+  getPaymentByTransaction: async (transactionId) => {
+    const response = await api.get(`/api/payments/transaction/${transactionId}`);
+    return response.data;
+  },
+
+  getPaymentsByBill: async (billId) => {
+    const response = await api.get(`/api/payments/bill/${billId}`);
+    return response.data;
+  },
+};
+
+// ==================== SERVICE ACTIVATION ====================
+export const serviceActivationService = {
+  activateService: async (serviceData) => {
+    const response = await api.post('/api/services/activate', serviceData);
+    return response.data;
+  },
+
+  deactivateService: async (serviceId) => {
+    const response = await api.post(`/api/services/deactivate/${serviceId}`);
+    return response.data;
+  },
+
+  getUserServices: async (userId) => {
+    const response = await api.get(`/api/services/user/${userId}`);
+    return response.data;
+  },
+
+  getActiveServices: async (userId) => {
+    const response = await api.get(`/api/services/user/${userId}/active`);
+    return response.data;
+  },
+
+  getServiceById: async (serviceId) => {
+    const response = await api.get(`/api/services/${serviceId}`);
+    return response.data;
+  },
+};
+
+// ==================== CHAT SERVICE ====================
+export const chatService = {
+  createChatRoom: async (userId) => {
+    const response = await api.post(`/api/chat/room/create?userId=${userId}`);
+    return response.data;
+  },
+
+  getChatRoom: async (roomId) => {
+    const response = await api.get(`/api/chat/room/${roomId}`);
+    return response.data;
+  },
+
+  getChatHistory: async (roomId) => {
+    const response = await api.get(`/api/chat/room/${roomId}/messages`);
+    return response.data;
+  },
+
+  closeChatRoom: async (roomId) => {
+    const response = await api.post(`/api/chat/room/${roomId}/close`);
+    return response.data;
+  },
+
+  getUserChatRooms: async (userId) => {
+    const response = await api.get(`/api/chat/user/${userId}/rooms`);
+    return response.data;
+  },
+};
+
+// ==================== NOTIFICATION SERVICE (Optional) ====================
+// Change this in your api.js
+// ==================== NOTIFICATION SERVICE ====================
+export const notificationService = {
+  getUserNotifications: async (userId) => {
+    try {
+      // 1. Call the backend (returns a raw array)
+      const response = await api.get(`/api/notifications/user/${userId}`);
+      
+      // 2. Wrap it so the Dashboard.jsx can read it correctly
+      // We check if response.data IS the array itself
+      return { 
+        available: true, 
+        data: Array.isArray(response.data) ? response.data : [] 
+      };
+    } catch (error) {
+      console.error('Notification API Error:', error);
+      return { available: false, data: [] };
+    }
+  },
+};
+
 export default api;

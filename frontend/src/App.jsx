@@ -9,6 +9,7 @@ import BillDetails from './components/Billing/BillDetails';
 import ChatWidget from './components/Chat/ChatWidget.jsx';
 import ServiceManagement from './components/Services/ServiceManagement.jsx';
 import Payment from './components/Payment/PaymentForm.jsx';
+import Notifications from './components/notification/Notification.jsx';
 
 function App() {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ function App() {
 
         {/* App Pages */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/bills" element={<BillList />} />
         <Route path="/bills/:billId" element={<BillDetails />} />
         <Route path="/services" element={<ServiceManagement />} />

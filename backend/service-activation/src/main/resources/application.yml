@@ -6,9 +6,9 @@ spring:
     name: service-activation
     
   datasource:
-    url: jdbc:postgresql://localhost:5432/service_db
+    url: jdbc:postgresql://localhost:5400/service_db
     username: postgres
-    password: "Yasuri@123"
+    password: kavi
     driver-class-name: org.postgresql.Driver
     
   jpa:
